@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+#Editor Specific
+.vscode/
+.history/
+*.swp
+*.swo
+
+#Project Specific
+/python/app/__pycache__
+/python/app/logs

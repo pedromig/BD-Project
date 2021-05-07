@@ -1,0 +1,22 @@
+# 
+version: '3'
+
+services:
+  db:
+    build: ./postgresql
+    container_name: db
+    expose:
+      - "5444"
+    ports:
+      - "5444:5432"
+  web:
+    build: ./python
+    container_name: api
+    volumes:
+      - "./python/app:/app"
+    expose:
+      - "5000"
+    ports:
+      - "8080:5000"
+    depends_on:
+      - db
