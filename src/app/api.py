@@ -203,19 +203,15 @@ if __name__ == "__main__":
     ch.setLevel(logging.DEBUG)
 
     # create formatter
-    formatter = logging.Formatter('%(asctime)s [%(levelname)s]:  %(message)s',
-                                  '%H:%M:%S')
-    # "%Y-%m-%d %H:%M:%S") # not using DATE to simplify
+    formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s]:  %(message)s', '%H:%M:%S'
+    )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    time.sleep(1)  # just to let the DB start before this print :-)
-
-    logger.info("\n------Everything seems to be working ----------\n" +
-                "-----------Docker: http://localhost:8080/--------------\n"
-                "-----------Native: http://localhost:5000/--------------\n"
+    time.sleep(1)
+    logger.info("\n-------- Everything seems to be working ----------\n"
+                "-------- Docker: http://localhost:8080/ ----------\n"
+                "-------- Native: http://localhost:5000/ ----------\n"
                 )
-
-    app.run(host="0.0.0.0", debug=True, threaded=True)
-
     app.run(host="0.0.0.0",  debug=True, threaded=True)

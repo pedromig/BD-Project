@@ -102,7 +102,7 @@ database through an SQL interface.
 
 If you choose to install and run the application and all its tools natively please follow these instructions.
 
-NOTE: The native installation allows you to have more control over the application and database configurations but if you are looking to try the application and you don't want to worry about all the small configuration details, this project has docker support allowing you build pre-configured images and create containers that will run this application components with little or no configuration. To know how you use them check the [Docker Support](#docker-support) chapter.
+`NOTE:` The native installation allows you to have more control over the application and database configurations but if you are looking to try the application and you don't want to worry about all the small configuration details, this project has docker support allowing you build pre-configured images and create containers that will run this application components with little or no configuration. To know how you use them check the [Docker Support](#docker-support) chapter.
 
 ### Tools installation
 
@@ -298,7 +298,7 @@ In order to build this particular project you can issue the following commands.
    docker-compose -f compose.yml up --build
 ```
 
-These commands will create a "logs" file where the REST API server logs will be placed and will assemble the app and db images (downloading the necessary components) create containers for both of them and run them until you issue a SIGINT and stop the process. For ease of use we added the script [compose.sh](scripts/compose.sh) which allows you to execute these commands and add more options
+These commands will create a "logs" file where the REST API server logs will be placed and will assemble the app and db images (downloading the necessary components) create containers for both of them and run them (in foreground) until you issue a SIGINT and stop the process. For ease of use we added the script [compose.sh](scripts/compose.sh) which allows you to execute these commands and add more options
 
 ```bash
    # Give the user permission to execute this script
@@ -316,6 +316,8 @@ These commands will create a "logs" file where the REST API server logs will be 
    # containers from those images in the background
    ./compose.sh -d
 ```
+
+`NOTE:` After you run the docker-compose command or script the db and auction-web-app images and will be installed in your system and the containers from those images will be created too. The next time you want to run a container from those images please consider using `docker start {container_name}` to avoid the creation of a new image/container equal to the already installed/created. Just keep in mind that the database container must be started before the auction-rest-api. Use `docker stop {container_name}` to stop the containers.
 
 #### Manually
 
@@ -339,20 +341,23 @@ You can build the images and run the containers manually should you although it 
 
 Once you get the containers running the REST API and database will be accessible through an exposed port in your systems localhost. Assuming that you followed these instructions you can access the containers like this:
 
+`ǸOTE:` Always Keep in mind that the database container must be started before the auction-rest-api
+
 #### Database Container
 
 The database is exposed by the docker container in the port 6000 of your host machine to access it use psql, pgadmin4 or any other postgreSQL client
 
 ```bash
-# Example: Accessing the database with a example user
+# Example: Accessing the database with the superuser
 
 # Database Name: dbauction
 # Database Exposed port: 6000
 
 # Example user account information
-# Username: example
+# Username: admin
+# Password: admin
 
-psql -h localhost -p 6000 -U example -d dbauction
+psql -h localhost -p 6000 -U admin -d dbauction
 ```
 
 #### REST API
