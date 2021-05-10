@@ -90,8 +90,6 @@ database through an SQL interface.
 └── REQUIREMENTS.txt
 ```
 
-`TODO: Add Project Structure`
-
 ## Native installation
 
 If you choose to install and run the application and all its tools natively please follow these instructions.
@@ -311,7 +309,7 @@ These commands will create a "logs" file where the REST API server logs will be 
    ./compose.sh -d
 ```
 
-`NOTE:` After you run the docker-compose command or script the db and auction-web-app images and will be installed in your system and the containers from those images will be created too. The next time you want to run a container from those images please consider using `docker start {container_name}` to avoid the creation of a new image/container equal to the already installed/created. Just keep in mind that the database container must be started before the auction-rest-api. Use `docker stop {container_name}` to stop the containers.
+`NOTE:` After you run the docker-compose command or script the db and auction-web-app images and will be installed in your system and the containers from those images will be created too. The next time you want to run a container from those images please consider using `docker start -ai {container_name}` to avoid the creation of a new image/container equal to the already installed/created. Just keep in mind that the database container must be started before the auction-rest-api. Use `docker stop {container_name}` to stop the containers.
 
 #### Manually
 
@@ -399,6 +397,9 @@ Here is a list of docker commands that might be useful
 
    # To forcefully remove all containers do
    docker container prune
+
+   # To start a container and attach to STDIN && STDOUT
+   docker start -ai {container}
 ```
 
 ## Dragon server
