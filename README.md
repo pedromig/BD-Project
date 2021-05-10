@@ -199,6 +199,35 @@ The components of this project such as the PostgreSQL database and REST service 
 ### REST API
 
 `TODO: Add here information relative to our API`
+`TODO: Format this better`
+
+- User login Query
+
+```bash
+curl -X PUT http://localhost:8080/dbauction/user -H "Content-Type: application/json" -d '{"username": "Marega", "password": "Maregod"}'
+```
+
+- Expected Response
+
+```json
+{
+  "token": "Here goes a big string that is in fact a token"
+}
+```
+
+- User Registry Query
+
+```bash
+curl -X POST http://localhost:8080/dbauction/user -H "Content-Type: application/json" -d '{"username": "HereGoesaName", "password": "HereGoesAPassword", "email":"HereGoesAnEmail"}'
+```
+
+- Expected Response
+
+```json
+{
+  "token": "Here goes a big string that is in fact a token"
+}
+```
 
 # Collaborators
 
