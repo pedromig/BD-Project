@@ -73,17 +73,11 @@ database through an SQL interface.
 │  ├── deliverables
 │  │  └── meta1.zip
 │  └── db_project.pdf
-├── python
-│  ├── app
-│  │  └── API.py
-│  └── Dockerfile
 ├── scripts
 │  ├── compose.sh
 │  └── compose.yml
 ├── src
 │  ├── app
-│  │  ├── logs
-│  │  │  └── log_file.log
 │  │  ├── api.py
 │  │  └── Dockerfile
 │  └── db
