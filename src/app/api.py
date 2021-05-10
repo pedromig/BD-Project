@@ -1,188 +1,167 @@
 from flask import Flask, jsonify, request
-import argparse
-import sys
-import logging
-import psycopg2 as pg
-import time
+from datetime import datetime, timedelta
+from functools import wraps
 
+import psycopg2 as pg
+import logging
+import sys
+import time
+import argparse
+import jwt
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
 auth = None
 
 
 @app.route('/')
 def hello():
     return """
-
-    Hello World!  <br/>
+    Hi there!<br/>
     <br/>
-    Check the sources for instructions on how to use the endpoints!<br/>
+    How did you get here?<br/>
     <br/>
-    BD 2021 Team<br/>
+    Anyway, this is the home page, in the future, all the documentation required to run this app will be listen in here<br/>
     <br/>
     """
 
 
-##
-# Demo GET
-##
-# Obtain all departments, in JSON format
-##
-# To use it, access:
-##
-# http://localhost:8080/departments/
-##
+def auth_user(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        token = request.args.get('token')
+        if not token:
+            return jsonify({'Error': 'Token is missing!'}), 401
 
-@app.route("/departments/", methods=['GET'], strict_slashes=True)
-def get_all_departments():
-    logger.info("###              DEMO: GET /departments              ###")
-
-    conn = db_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT ndep, nome, local FROM dep")
-    rows = cur.fetchall()
-
-    payload = []
-    logger.debug("---- departments  ----")
-    for row in rows:
-        logger.debug(row)
-        content = {'ndep': int(row[0]), 'nome': row[1], 'localidade': row[2]}
-        payload.append(content)  # appending to the payload to be returned
-
-    conn.close()
-    return jsonify(payload)
+        try:
+            logger.debug(token)
+            jwt.decode(token, app.config['SECRET_KEY'])
+        except Exception as e:
+            logger.debug(e)
+            return jsonify({'Message': 'Invalid token'}), 403
+        return func(*args, **kwargs)
+    return decorated
 
 
-##
-# Demo GET
-##
-# Obtain department with ndep <ndep>
-##
-# To use it, access:
-##
-# http://localhost:8080/departments/10
-##
-
-@app.route("/departments/<ndep>", methods=['GET'])
-def get_department(ndep):
-    logger.info(
-        "###              DEMO: GET /departments/<ndep>              ###")
-
-    logger.debug(f'ndep: {ndep}')
-
-    conn = db_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT ndep, nome, local FROM dep where ndep = %s", (ndep,))
-    rows = cur.fetchall()
-
-    row = rows[0]
-
-    logger.debug("---- selected department  ----")
-    logger.debug(row)
-    content = {'ndep': int(row[0]), 'nome': row[1], 'localidade': row[2]}
-
-    conn.close()
-    return jsonify(content)
-
-
-##
-# Demo POST
-##
-# Add a new department in a JSON payload
-##
-# To use it, you need to use postman or curl:
-##
-# curl -X POST http://localhost:8080/departments/ -H "Content-Type: application/json" -d '{"localidade": "Polo II", "ndep": 69, "nome": "Seguranca"}'
-##
-
-
-@app.route("/departments/", methods=['POST'])
-def add_departments():
-    logger.info("###              DEMO: POST /departments              ###")
-    payload = request.get_json()
-
-    conn = db_connection()
-    cur = conn.cursor()
-
-    logger.info("---- new department  ----")
-    logger.debug(f'payload: {payload}')
-
-    # parameterized queries, good for security and performance
-    statement = """
-                  INSERT INTO dep (ndep, nome, local)
-                          VALUES ( %s,   %s ,   %s )"""
-
-    values = (payload["ndep"], payload["localidade"], payload["nome"])
-
-    try:
-        cur.execute(statement, values)
-        cur.execute("commit")
-        result = 'Inserted!'
-    except (Exception, psycopg2.DatabaseError) as error:
-        logger.error(error)
-        result = 'Failed!'
-    finally:
-        if conn is not None:
-            conn.close()
-
-    return jsonify(result)
-
-
-##
-# Demo PUT
-##
-# Update a department based on the a JSON payload
-##
-# To use it, you need to use postman or curl:
-##
-# curl -X PUT http://localhost:8080/departments/ -H "Content-Type: application/json" -d '{"ndep": 69, "localidade": "Porto"}'
-##
-
-@app.route("/departments/", methods=['PUT'])
-def update_departments():
-    logger.info("###              DEMO: PUT /departments              ###")
+# Authenticate a user
+@app.route("/dbproj/user", methods=['PUT'])
+def login():
+    logger.info("Authenticating a user")
     content = request.get_json()
 
-    conn = db_connection()
+    conn = create_connection()
     cur = conn.cursor()
 
-    # if content["ndep"] is None or content["nome"] is None :
-    #    return 'ndep and nome are required to update'
+    if "username" not in content or "password" not in content:
+        return jsonify({"Error": 'Invalid Parameters in call'})
 
-    if "ndep" not in content or "localidade" not in content:
-        return 'ndep and localidade are required to update'
+    logger.info(f'Request Content: {content}')
 
-    logger.info("---- update department  ----")
-    logger.info(f'content: {content}')
+    statement1 = """
+                SELECT person_id
+                FROM users
+                WHERE person_username = %s AND person_password = %s
+                """
+    statement2 = """
+                SELECT person_id
+                FROM administrator
+                WHERE person_username = %s AND person_password = %s
+                """
 
-    # parameterized queries, good for security and performance
-    statement = """
-                UPDATE dep
-                  SET local = %s
-                WHERE ndep = %s"""
-
-    values = (content["localidade"], content["ndep"])
+    values = (content["username"], content["password"])
 
     try:
-        res = cur.execute(statement, values)
-        result = f'Updated: {cur.rowcount}'
-        cur.execute("commit")
-    except (Exception, psycopg2.DatabaseError) as error:
+        res = cur.execute(statement1, values)
+        rows = cur.fetchall()
+        if(len(rows) != 0):
+            row = rows[0]
+            token = jwt.encode({
+                'person_id': row[0],
+                'is_admin': 'false',  # This is a bad bad security flaw, should be fixed in the future
+                # Defaulting for a 24 hr token
+                'expiration': str(datetime.utcnow() + timedelta(hours=24))
+            },
+                app.config['SECRET_KEY'])
+            logger.info(token)
+            return {'token': token.decode('utf-8')}
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("Request not found in user database, checking admin")
         logger.error(error)
-        result = 'Failed!'
     finally:
         if conn is not None:
             conn.close()
-    return jsonify(result)
+
+    try:
+        res = cur.execute(statement2, values)
+        rows = cur.fetchall()
+        if(len(rows) != 0):
+            row = rows[0]
+            token = jwt.encode({
+                'person_id': row[0],
+                'is_admin': true,  # This is a bad bad security flaw, should be fixed in the future
+                # Defaulting for a 24 hr token
+                'expiration': str(datetime.utcnow() + timedelta(hours=24))
+            },
+                app.config['SECRET_KEY'])
+            logger.info(token)
+            return jsonify({'token': token.decode('utf-8')})
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("Request not found in user database, checking admin")
+        return jsonify({"Error": 'User not Found'}, 404)
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+# Register user (Can't register a user via webapp)
 
 
-##########################################################
-# DATABASE ACCESS
-##########################################################
+@app.route("/dbproj/user", methods=['POST'])
+def create_user():
+    logger.info("Authenticating a user")
+    content = request.get_json()
 
-def db_connection():
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    if "username" not in content or "password" not in content or "email" not in content:
+        return jsonify({"Error": 'Invalid Parameters in call'})
+
+    logger.info(f'Request Content: {content}')
+
+    statement = """
+                INSERT INTO 
+                users(person_username, person_password,person_email) 
+                VALUES 
+                (%s, %s, %s);
+                """
+    statement2 = """
+                SELECT person_id
+                FROM users
+                WHERE person_username = %s
+                """
+
+    values = (content["username"], content["password"], content["email"])
+
+    try:
+        cursor.execute(statement, values)
+
+        conn.commit()
+        logger.info("Insert user successfully into the database Username : %s , Password : %s , email : %s , is_Admin : false",
+                    values[0], values[1], values[2])
+        cursor.execute(statement2, [values[0]])
+        rows = cursor.fetchall()
+        return jsonify({"userId": str(rows[0][0])})
+
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"Error": str(error)})
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def create_connection():
     return pg.connect(user=auth.db_username,
                       password=auth.db_password,
                       host=auth.db_hostname,
@@ -232,7 +211,11 @@ if __name__ == "__main__":
 
     time.sleep(1)  # just to let the DB start before this print :-)
 
-    logger.info("\n---------------------------------------------------------------\n" +
-                "API v1.0 online: http://localhost:8080/departments/\n\n")
+    logger.info("\n------Everything seems to be working ----------\n" +
+                "-----------Docker: http://localhost:8080/--------------\n"
+                "-----------Native: http://localhost:5000/--------------\n"
+                )
+
+    app.run(host="0.0.0.0", debug=True, threaded=True)
 
     app.run(host="0.0.0.0",  debug=True, threaded=True)

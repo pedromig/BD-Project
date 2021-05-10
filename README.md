@@ -3,7 +3,7 @@
 ![APM](https://img.shields.io/apm/l/vim-mode)
 ![BUILD](https://img.shields.io/badge/build-passing-green)
 
-## About The Project
+## About the project
 
 Project for the Databases subject of the Informatics Engineering course @University of Coimbra
 
@@ -24,7 +24,32 @@ simplified view of the system to be developed. As we can see, the user interacts
 server through the exchange of REST request / response and in turn the web server interacts with the
 database through an SQL interface.
 
-## Technologies Used
+## Index
+
+- [BD-Project](#bd-project)
+  - [About the project](#about-the-project)
+  - [Index](#index)
+  - [Technologies used](#technologies-used)
+  - [Project structure](#project-structure)
+  - [Native installation](#native-installation)
+    - [Tools installation](#tools-installation)
+    - [Database setup](#database-setup)
+    - [Running the application](#running-the-application)
+  - [Docker support](#docker-support)
+    - [Docker and Docker-Compose installation](#docker-and-docker-compose-installation)
+    - [Image installation and container creation](#image-installation-and-container-creation)
+      - [Using docker-compose](#using-docker-compose)
+      - [Manually](#manually)
+    - [Interacting with the REST API and database containers](#interacting-with-the-rest-api-and-database-containers)
+      - [Database Container](#database-container)
+      - [REST API](#rest-api)
+    - [Useful docker commands](#useful-docker-commands)
+  - [Dragon server](#dragon-server)
+  - [Project features](#project-features)
+    - [REST API specification](#rest-api-specification)
+- [Collaborators](#collaborators)
+
+## Technologies used
 
 1. Programming Languages
    - Python
@@ -40,16 +65,49 @@ database through an SQL interface.
    - [Docker](https://www.docker.com/)
    - [Postman](https://postman.com/)
 
-## Native Installation
+## Project structure
 
-If you choose to run the application and all the tools natively please follow these instructions.
+```
+.
+├── docs
+│  ├── deliverables
+│  │  └── meta1.zip
+│  └── db_project.pdf
+├── python
+│  ├── app
+│  │  └── API.py
+│  └── Dockerfile
+├── scripts
+│  ├── compose.sh
+│  └── compose.yml
+├── src
+│  ├── app
+│  │  ├── logs
+│  │  │  └── log_file.log
+│  │  ├── api.py
+│  │  └── Dockerfile
+│  └── db
+│     ├── data.sql
+│     ├── Dockerfile
+│     └── schema.sql
+├── .gitignore
+├── LICENSE
+├── README.md
+└── REQUIREMENTS.txt
+```
+
+`TODO: Add Project Structure`
+
+## Native installation
+
+If you choose to install and run the application and all its tools natively please follow these instructions.
 
 NOTE: The native installation allows you to have more control over the application and database configurations but if you are looking to try the application and you don't want to worry about all the small configuration details, this project has docker support allowing you build pre-configured images and create containers that will run this application components with little or no configuration. To know how you use them check the [Docker Support](#docker-support) chapter.
 
-### Tools Installation
+### Tools installation
 
 In order to run this project it is required to have an installation of a python interpreter `python3` or `pypy3` the python package installer `pip` and the `curl` or `postman` tool which provides the same functionality as curl but is being more GUI oriented.
-In our project we are opting to use the python3 interpreter and the curl tool. These programs can be installed using your operating system package manager as shown bellow for a Linux/MacOS machine.
+In our project we are opting to use the python3 interpreter and the curl tool. These programs can be installed using your operating system package manager as shown bellow for some Linux distributions and MacOS.
 
 ```bash
 # MacOS:
@@ -67,19 +125,18 @@ sudo dnf install python3 python3-pip curl
 # OpenSUSE:
 sudo zypper install python3 python3-pip curl
 
-#Arch Linux:
+# Arch Linux:
 sudo pacman -S python python-pip curl
 ```
 
-In case ofWindows/MacOS machines it is possible to install the software
-via a graphical installer. For more information about the download installation of python3, pip, curl and postman check the following websites:
+In case of Windows/MacOS machines it is possible to install the software via a graphical installer. For more information about the download installation of python3, pip, curl and postman check the following websites:
 
 - [Python](https://www.python.org/downloads/)
 - [Pip](https://pip.pypa.io/en/stable/installing/)
 - [Curl](https://curl.se/download.html)
 - [Postman](https://postman.com/)
 
-To store information this project uses the PostgreSQL Database management system. This DBMS can be installed using your operating system package manager as shown bellow for a debian based Linux distro.
+To store information this project uses the PostgreSQL Database management system. This DBMS can be installed using your operating system package manager as shown bellow for a debian based Linux distributions.
 
 ```bash
 # Create the file repository configuration:
@@ -113,9 +170,9 @@ To install all the python libraries described above run the following command on
 python3 -m pip install -r REQUIREMENTS.txt
 ```
 
-### Project Setup
+### Database setup
 
-After the native installation of all the tools you are almost ready to begin using the REST API. Before that you will need to create and setup your native postgreSQL installation and the web server where the REST service will run.
+After the native installation of all the tools you are almost ready to begin using the application's REST API. Before that you will need to create and setup your native postgreSQL installation and the web server where the REST service will run.
 To setup de database you need to access your postgreSQL DMBS with a client like `psql` or `pgadmin4` in order to create a new user and database to host all the application's data. The following instructions show you how you can do this using the `psql` client (that was installed along with postgreSQL).
 
 ```bash
@@ -160,6 +217,8 @@ psql -h localhost -p 5432 -U example -d dbauction
 
 `IMPORTANT: Add all the SQL files that we are still going to make as the project grows bigger`
 
+### Running the application
+
 After all the configuration of the database is time to run our web server making the REST API accessible to the outside world. To do that just run the [api.py](src/app/api.py) file providing it the required arguments .The arguments consist of a database name, host and port we want to connect to, where we can store and retrieve information and a the user credentials (username and password) necessary to access it. To see which arguments to pass check the help text of the program by executing it with no arguments.
 
 ```bash
@@ -178,27 +237,180 @@ python3 api.py
 python3 api.py -u example -p 123 -D dbauction -H localhost -P 5432
 ```
 
-Once we execute the [api.py](src/app/api.py) after all this setup the web server that will provide the REST service will be started and will run in the host machine until the program is stopped. By default a flask web server will run on port 5000, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API specification.
+Once we execute the [api.py](src/app/api.py) after all this setup the web server that will provide the REST service will be started and will run in the host machine until the program is stopped. By default a flask web server will run on port 5000, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API endpoint specification.
 
 ```
 http://localhost:5000/
 ```
 
-## Docker Support
+## Docker support
 
-The components of this project such as the PostgreSQL database and REST service (that will be provided via web server) can be ran in docker containers instead natively in your machine. The docker images are already pre-configured saving you the trouble of installing all the software natively in your machine. In order to use install and run these images follow the instructions described bellow.
+Docker is an open platform for developing, shipping, and running applications. Docker enables you to separate your applications from your infrastructure so you can deliver software quickly. With Docker, you can manage your infrastructure in the same ways you manage your applications. By taking advantage of Docker’s methodologies for shipping, testing, and deploying code quickly, you can significantly reduce the delay between writing code and running it in production.
 
-`TODO: docker support chapter`
+The components of this project such as the PostgreSQL database and REST API service (that will be provided via flask web server/application) can be ran in docker containers instead natively in your machine. The docker images are already pre-configured saving you the trouble of installing all the software natively in your machine.
+
+### Docker and Docker-Compose installation
+
+The docker and docker-compose can be installed using your operating system package manager as shown bellow for a debian based Linux distribution (for other distributions the process is similar).
+
+```bash
+## INSTALL DOCKER (debian based distro)
+
+sudo apt-get update
+
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+```
+
+In case of Windows/MacOS machines it is possible to install the software
+via a graphical installer. For more information about the download installation of docker and docker-compose tools check the following links.
+
+- [docker](https://docs.docker.com/engine/install/)
+- [docker-compose](https://docs.docker.com/compose/install/)
+
+### Image installation and container creation
+
+In order to install the images, create containers and run them in your machine you have multiple ways to do it:
+
+#### Using docker-compose
+
+You can use the docker-compose tool to automate the build process of docker images. This docker file follows a list of recipes specified in .yml file and that tells docker how should the images be built which images depend on which, the volumes to mount, the ports to expose, etc... For this project a docker-compose configuration file ([compose.yml](scripts/compose.yml)) has already been made. You can add more information to it should you wish to configure it even more so it fits your needs. The following examples show example usage of the script
+
+In order to build this particular project you can issue the following commands.
+
+```bash
+   mkdir -p ../src/app/logs
+   docker-compose -f compose.yml up --build
+```
+
+These commands will create a "logs" file where the REST API server logs will be placed and will assemble the app and db images (downloading the necessary components) create containers for both of them and run them until you issue a SIGINT and stop the process. For ease of use we added the script [compose.sh](scripts/compose.sh) which allows you to execute these commands and add more options
+
+```bash
+   # Give the user permission to execute this script
+   chmod u+x compose.sh
+
+    # Executes the commands shown above (default behaviour)
+   ./compose.sh
+
+   # Use the --no-start option to compose the images only
+   # This command installs the images only
+   ./compose.sh --no-start
+
+
+   # Use the -d option to compose the images and run
+   # containers from those images in the background
+   ./compose.sh -d
+```
+
+#### Manually
+
+You can build the images and run the containers manually should you although it might be error prone since something can go wrong with the configuration. We highly discourage this usage since its safer to build the images and run containers by following the instructions in the docker compose file. The examples bellow show a the same configuration that you get when using docker-compose but executed manually.
+
+```bash
+   # Build docker images
+   docker build -t  auction-rest-api:latest  /src/app
+   docker build -t  db:latest  /src/db
+
+   # Create a logs folder
+   mkdir -p logs
+
+   # Run docker images
+   docker run --name db -p 6000:5432 db:latest
+   docker run --name auction-rest-api -p 8080:5000
+               \ -v logs:/app/logs auction-rest-api:latest
+```
+
+### Interacting with the REST API and database containers
+
+Once you get the containers running the REST API and database will be accessible through an exposed port in your systems localhost. Assuming that you followed these instructions you can access the containers like this:
+
+#### Database Container
+
+The database is exposed by the docker container in the port 6000 of your host machine to access it use psql, pgadmin4 or any other postgreSQL client
+
+```bash
+# Example: Accessing the database with a example user
+
+# Database Name: dbauction
+# Database Exposed port: 6000
+
+# Example user account information
+# Username: example
+
+psql -h localhost -p 6000 -U example -d dbauction
+```
+
+#### REST API
+
+The REST API exposed by the docker container in the port 8080 of your host machine, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API endpoint specification.
+
+```
+http://localhost:8080/
+```
+
+### Useful docker commands
+
+Here is a list of docker commands that might be useful
+
+```bash
+   # To see all the available commands do
+   docker --help
+
+   # To start a container do
+   docker start {container}
+
+   # To stop a container
+   docker stop {container}
+
+   # To run a container from an image
+   docker run {image}
+
+   # To list all running containers do
+   docker ps
+
+   # To list all running and stopped containers do
+   docker ps -a
+
+   # To see all the images installed in your system do
+   docker images
+
+   # To remove a image do
+   docker rmi {image_name}
+
+   # To forcefully remove all images do
+   docker image prune -f
+
+   # To remove a docker container do
+   docker rm {container_name}
+
+   # To forcefully remove all containers do
+   docker container prune
+```
 
 ## Dragon server
 
-`TODO: Add here information about the interaction with our server`
+`TODO: Add here information about the interaction with our server i will do this when we complete the project`
 
-## Project Features
+## Project features
 
-### REST API
+### REST API specification
 
-`TODO: Add here information relative to our API`
+`TODO: Add here information relative to our API` \
 `TODO: Format this better`
 
 - User login Query
