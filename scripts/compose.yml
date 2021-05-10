@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  db:
+    image: db:latest
+    build: ../src/db
+    container_name: db
+    ports:
+      - "6000:5432"
+  app:
+    image: auction-rest-api:latest
+    build: ../src/app
+    container_name: auction-rest-api
+    volumes:
+      - "../src/app/logs:/app/logs"
+    ports:
+      - "8080:5000"
+    depends_on:
+      - db
