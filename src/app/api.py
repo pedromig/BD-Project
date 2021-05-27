@@ -45,6 +45,7 @@ def auth_user(func):
 def hello():
     return "Well, the description has was too big, but it is working"
 
+
 # Login Endpoint
 @app.route("/user", methods=['PUT'])
 def login():
@@ -112,7 +113,8 @@ def login():
         if conn is not None:
             conn.close()
 
-@app.route("/user", methods = ['GET'])
+# User Listing Endpoint
+@app.route("/user", methods=['GET'])
 def print_users():
     try:
         conn = create_connection()
@@ -181,6 +183,7 @@ def create_user():
     finally:
         if conn is not None:
             conn.close()
+
 
 # Database Connection Establishment
 def create_connection():
