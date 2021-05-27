@@ -81,7 +81,7 @@
 
 CREATE TABLE person (
 	id	 BIGSERIAL,
-	username VARCHAR(512) NOT NULL,
+	username VARCHAR(512) NOT NULL UNIQUE,
 	password VARCHAR(512) NOT NULL,
 	email	 VARCHAR(512) NOT NULL,
 	banned	 BOOL NOT NULL DEFAULT false,

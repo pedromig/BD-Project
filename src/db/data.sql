@@ -3,7 +3,8 @@
 INSERT INTO person (
     username,
     password, 
-    email
+    email,
+    admin
 )
 VALUES 
 ( -- id: 0
