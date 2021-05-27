@@ -42,7 +42,7 @@ database through an SQL interface.
       - [Manually](#manually)
     - [Interacting with the REST API and database containers](#interacting-with-the-rest-api-and-database-containers)
       - [Database Container](#database-container)
-      - [REST API](#rest-api)
+      - [Web server (REST API) container](#rest-api)
     - [Useful docker commands](#useful-docker-commands)
   - [Dragon server](#dragon-server)
   - [Project features](#project-features)
@@ -74,7 +74,8 @@ database through an SQL interface.
 │  │  └── meta1.zip
 │  └── db_project.pdf
 ├── scripts
-│  ├── compose.sh
+│  ├── clean.sh
+|  ├── compose.sh
 │  └── compose.yml
 ├── src
 │  ├── app
@@ -335,7 +336,7 @@ Once you get the containers running the REST API and database will be accessible
 
 `ǸOTE:` Always Keep in mind that the database container must be started before the auction-rest-api
 
-#### Database Container
+#### Database container
 
 The database is exposed by the docker container in the port 6000 of your host machine to access it use psql, pgadmin4 or any other postgreSQL client
 
@@ -352,7 +353,7 @@ The database is exposed by the docker container in the port 6000 of your host ma
 psql -h localhost -p 6000 -U admin -d dbauction
 ```
 
-#### REST API
+#### Web server (REST API) container
 
 The REST API exposed by the docker container in the port 8080 of your host machine, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API endpoint specification.
 
@@ -416,7 +417,7 @@ Here is a list of docker commands that might be useful
 - User login Query
 
 ```bash
-curl -X PUT http://localhost:8080/dbauction/user -H "Content-Type: application/json" -d '{"username": "Marega", "password": "Maregod"}'
+curl -X PUT http://localhost:8080/user -H "Content-Type: application/json" -d '{"username": "Marega", "password": "Maregod"}'
 ```
 
 - Expected Response
@@ -430,7 +431,7 @@ curl -X PUT http://localhost:8080/dbauction/user -H "Content-Type: application/j
 - User Registry Query
 
 ```bash
-curl -X POST http://localhost:8080/dbauction/user -H "Content-Type: application/json" -d '{"username": "HereGoesaName", "password": "HereGoesAPassword", "email":"HereGoesAnEmail"}'
+curl -X POST http://localhost:8080/user -H "Content-Type: application/json" -d '{"username": "HereGoesaName", "password": "HereGoesAPassword", "email":"HereGoesAnEmail"}'
 ```
 
 - Expected Response

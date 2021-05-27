@@ -44,7 +44,7 @@ def auth_user(func):
 
 
 # Authenticate a user
-@app.route("/dbproj/user", methods=['PUT'])
+@app.route("/user", methods=['PUT'])
 def login():
     logger.info("Authenticating a user")
     content = request.get_json()
@@ -54,7 +54,6 @@ def login():
 
     if "username" not in content or "password" not in content:
         return jsonify({"Error": 'Invalid Parameters in call'})
-
     logger.info(f'Request Content: {content}')
 
     statement1 = """
@@ -77,11 +76,10 @@ def login():
             row = rows[0]
             token = jwt.encode({
                 'person_id': row[0],
-                'is_admin': 'false',  # This is a bad bad security flaw, should be fixed in the future
+                'is_admin': False,  # This is a bad bad security flaw, should be fixed in the future
                 # Defaulting for a 24 hr token
                 'expiration': str(datetime.utcnow() + timedelta(hours=24))
-            },
-                app.config['SECRET_KEY'])
+            }, app.config['SECRET_KEY'])
             logger.info(token)
             return {'token': token.decode('utf-8')}
     except (Exception, pg.DatabaseError) as error:
@@ -98,11 +96,10 @@ def login():
             row = rows[0]
             token = jwt.encode({
                 'person_id': row[0],
-                'is_admin': true,  # This is a bad bad security flaw, should be fixed in the future
+                'is_admin': True,  # This is a bad bad security flaw, should be fixed in the future
                 # Defaulting for a 24 hr token
                 'expiration': str(datetime.utcnow() + timedelta(hours=24))
-            },
-                app.config['SECRET_KEY'])
+            }, app.config['SECRET_KEY'])
             logger.info(token)
             return jsonify({'token': token.decode('utf-8')})
     except (Exception, pg.DatabaseError) as error:
@@ -116,7 +113,7 @@ def login():
 # Register user (Can't register a user via webapp)
 
 
-@app.route("/dbproj/user", methods=['POST'])
+@app.route("/user", methods=['POST'])
 def create_user():
     logger.info("Authenticating a user")
     content = request.get_json()
