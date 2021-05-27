@@ -29,27 +29,116 @@ database through an SQL interface.
 - [BD-Project](#bd-project)
   - [About the project](#about-the-project)
   - [Index](#index)
-  - [Technologies used](#technologies-used)
-  - [Project structure](#project-structure)
-  - [Native installation](#native-installation)
-    - [Tools installation](#tools-installation)
-    - [Database setup](#database-setup)
-    - [Running the application](#running-the-application)
-  - [Docker support](#docker-support)
-    - [Docker and Docker-Compose installation](#docker-and-docker-compose-installation)
-    - [Image installation and container creation](#image-installation-and-container-creation)
+  - [Technologies Used](#technologies-used)
+  - [Project Structure](#project-structure)
+  - [Native Installation](#native-installation)
+    - [Tools Installation](#tools-installation)
+    - [Database Setup](#database-setup)
+    - [Running the Application](#running-the-application)
+  - [Docker Support](#docker-support)
+    - [Docker and docker-compose Installation](#docker-and-docker-compose-installation)
+    - [Image Installation and Container Creation](#image-installation-and-container-creation)
       - [Using docker-compose](#using-docker-compose)
       - [Manually](#manually)
-    - [Interacting with the REST API and database containers](#interacting-with-the-rest-api-and-database-containers)
+    - [Interacting with The REST API and Database Containers](#interacting-with-the-rest-api-and-database-containers)
       - [Database Container](#database-container)
-      - [Web server (REST API) container](#rest-api)
-    - [Useful docker commands](#useful-docker-commands)
-  - [Dragon server](#dragon-server)
+      - [Web Server (REST API) Container](#web-server--rest-api--container)
+    - [Useful Docker Commands](#useful-docker-commands)
+  - [Dragon Server](#dragon-server)
   - [Project features](#project-features)
     - [REST API specification](#rest-api-specification)
+    - [User endpoints](#user-endpoints)
+      - [User Registration](#user-registration)
+        - [Request Parameters](#request-parameters)
+        - [Success Response](#success-response)
+        - [Error Responses](#error-responses)
+        - [Curl Query Example](#curl-query-example)
+      - [User Authentication](#user-authentication)
+        - [Request Parameters](#request-parameters-1)
+        - [Success Response](#success-response-1)
+        - [Error Responses](#error-responses-1)
+        - [Curl Query Example](#curl-query-example-1)
+      - [User Listing](#user-listing)
+        - [Request Parameters](#request-parameters-2)
+        - [Success Response](#success-response-2)
+        - [Error Responses](#error-responses-2)
+        - [Curl Query Example](#curl-query-example-2)
+      - [User Activity](#user-activity)
+        - [Request Parameters](#request-parameters-3)
+        - [Success Response](#success-response-3)
+        - [Error Responses](#error-responses-3)
+        - [Curl Query Example](#curl-query-example-3)
+      - [User Inbox](#user-inbox)
+        - [Request Parameters](#request-parameters-4)
+        - [Success Response](#success-response-4)
+        - [Error Responses](#error-responses-4)
+        - [Curl Query Example](#curl-query-example-4)
+      - [User Licitation](#user-licitation)
+        - [Request Parameters](#request-parameters-5)
+        - [Success Response](#success-response-5)
+        - [Error Responses](#error-responses-5)
+        - [Curl Query Example](#curl-query-example-5)
+      - [User Message Posting](#user-message-posting)
+        - [Request Parameters](#request-parameters-6)
+        - [Success Response](#success-response-6)
+        - [Error Responses](#error-responses-6)
+        - [Curl Query Example](#curl-query-example-6)
+      - [User Auction Editing](#user-auction-editing)
+        - [Request Parameters](#request-parameters-7)
+        - [Success Response](#success-response-7)
+        - [Error Responses](#error-responses-7)
+        - [Curl Query Example](#curl-query-example-7)
+    - [Auction Endpoints](#auction-endpoints)
+      - [Auction Creation](#auction-creation)
+        - [Request Parameters](#request-parameters-8)
+        - [Success Response](#success-response-8)
+        - [Error Responses](#error-responses-8)
+        - [Curl Query Example](#curl-query-example-8)
+      - [Auction Listing](#auction-listing)
+        - [Request Parameters](#request-parameters-9)
+        - [Success Response](#success-response-9)
+        - [Error Responses](#error-responses-9)
+        - [Curl Query Example](#curl-query-example-9)
+      - [Auction Searching](#auction-searching)
+        - [Request Parameters](#request-parameters-10)
+        - [Success Response](#success-response-10)
+        - [Error Responses](#error-responses-10)
+        - [Curl Query Example](#curl-query-example-10)
+      - [Auction Details](#auction-details)
+        - [Request Parameters](#request-parameters-11)
+        - [Success Response](#success-response-11)
+        - [Error Responses](#error-responses-11)
+        - [Curl Query Example](#curl-query-example-11)
+    - [Administrator Endpoints](#administrator-endpoints)
+      - [User Ban](#user-ban)
+        - [Request Parameters](#request-parameters-12)
+        - [Success Response](#success-response-12)
+        - [Error Responses](#error-responses-12)
+        - [Curl Query Example](#curl-query-example-12)
+      - [Auction Cancellation](#auction-cancellation)
+        - [Request Parameters](#request-parameters-13)
+        - [Success Response](#success-response-13)
+        - [Error Responses](#error-responses-13)
+        - [Curl Query Example](#curl-query-example-13)
+    - [Application Statistics](#application-statistics)
+      - [Users With Most Auctions](#users-with-most-auctions)
+        - [Request Parameters](#request-parameters-14)
+        - [Success Response](#success-response-14)
+        - [Error Responses](#error-responses-14)
+        - [Curl Query Example](#curl-query-example-14)
+      - [User Auction Winners](#user-auction-winners)
+        - [Request Parameters](#request-parameters-15)
+        - [Success Response](#success-response-15)
+        - [Error Responses](#error-responses-15)
+        - [Curl Query Example](#curl-query-example-15)
+      - [Auctions](#auctions)
+        - [Request Parameters](#request-parameters-16)
+        - [Success Response](#success-response-16)
+        - [Error Responses](#error-responses-16)
+        - [Curl Query Example](#curl-query-example-16)
 - [Collaborators](#collaborators)
 
-## Technologies used
+## Technologies Used
 
 1. Programming Languages
    - Python
@@ -65,7 +154,7 @@ database through an SQL interface.
    - [Docker](https://www.docker.com/)
    - [Postman](https://postman.com/)
 
-## Project structure
+## Project Structure
 
 ```
 .
@@ -91,13 +180,13 @@ database through an SQL interface.
 └── REQUIREMENTS.txt
 ```
 
-## Native installation
+## Native Installation
 
 If you choose to install and run the application and all its tools natively please follow these instructions.
 
 `NOTE:` The native installation allows you to have more control over the application and database configurations but if you are looking to try the application and you don't want to worry about all the small configuration details, this project has docker support allowing you build pre-configured images and create containers that will run this application components with little or no configuration. To know how you use them check the [Docker Support](#docker-support) chapter.
 
-### Tools installation
+### Tools Installation
 
 In order to run this project it is required to have an installation of a python interpreter `python3` or `pypy3` the python package installer `pip` and the `curl` or `postman` tool which provides the same functionality as curl but is being more GUI oriented.
 In our project we are opting to use the python3 interpreter and the curl tool. These programs can be installed using your operating system package manager as shown bellow for some Linux distributions and MacOS.
@@ -163,7 +252,7 @@ To install all the python libraries described above run the following command on
 python3 -m pip install -r REQUIREMENTS.txt
 ```
 
-### Database setup
+### Database Setup
 
 After the native installation of all the tools you are almost ready to begin using the application's REST API. Before that you will need to create and setup your native postgreSQL installation and the web server where the REST service will run.
 To setup de database you need to access your postgreSQL DMBS with a client like `psql` or `pgadmin4` in order to create a new user and database to host all the application's data. The following instructions show you how you can do this using the `psql` client (that was installed along with postgreSQL).
@@ -210,7 +299,7 @@ psql -h localhost -p 5432 -U example -d dbauction
 
 `IMPORTANT: Add all the SQL files that we are still going to make as the project grows bigger`
 
-### Running the application
+### Running the Application
 
 After all the configuration of the database is time to run our web server making the REST API accessible to the outside world. To do that just run the [api.py](src/app/api.py) file providing it the required arguments .The arguments consist of a database name, host and port we want to connect to, where we can store and retrieve information and a the user credentials (username and password) necessary to access it. To see which arguments to pass check the help text of the program by executing it with no arguments.
 
@@ -232,17 +321,17 @@ python3 api.py -u example -p 123 -D dbauction -H localhost -P 5432
 
 Once we execute the [api.py](src/app/api.py) after all this setup the web server that will provide the REST service will be started and will run in the host machine until the program is stopped. By default a flask web server will run on port 5000, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API endpoint specification.
 
-```
+```http
 http://localhost:5000/
 ```
 
-## Docker support
+## Docker Support
 
 Docker is an open platform for developing, shipping, and running applications. Docker enables you to separate your applications from your infrastructure so you can deliver software quickly. With Docker, you can manage your infrastructure in the same ways you manage your applications. By taking advantage of Docker’s methodologies for shipping, testing, and deploying code quickly, you can significantly reduce the delay between writing code and running it in production.
 
 The components of this project such as the PostgreSQL database and REST API service (that will be provided via flask web server/application) can be ran in docker containers instead natively in your machine. The docker images are already pre-configured saving you the trouble of installing all the software natively in your machine.
 
-### Docker and Docker-Compose installation
+### Docker and docker-compose Installation
 
 The docker and docker-compose can be installed using your operating system package manager as shown bellow for a debian based Linux distribution (for other distributions the process is similar).
 
@@ -276,7 +365,7 @@ via a graphical installer. For more information about the download installation 
 - [docker](https://docs.docker.com/engine/install/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 
-### Image installation and container creation
+### Image Installation and Container Creation
 
 In order to install the images, create containers and run them in your machine you have multiple ways to do it:
 
@@ -330,13 +419,13 @@ You can build the images and run the containers manually should you although it 
                \ -v logs:/app/logs auction-rest-api:latest
 ```
 
-### Interacting with the REST API and database containers
+### Interacting with The REST API and Database Containers
 
 Once you get the containers running the REST API and database will be accessible through an exposed port in your systems localhost. Assuming that you followed these instructions you can access the containers like this:
 
 `ǸOTE:` Always Keep in mind that the database container must be started before the auction-rest-api
 
-#### Database container
+#### Database Container
 
 The database is exposed by the docker container in the port 6000 of your host machine to access it use psql, pgadmin4 or any other postgreSQL client
 
@@ -353,15 +442,15 @@ The database is exposed by the docker container in the port 6000 of your host ma
 psql -h localhost -p 6000 -U admin -d dbauction
 ```
 
-#### Web server (REST API) container
+#### Web Server (REST API) Container
 
 The REST API exposed by the docker container in the port 8080 of your host machine, in order to interact with it we can use a web browser or make curl/postman calls to the following URL or other URLs derived from this one and described in the REST API endpoint specification.
 
-```
+```http
 http://localhost:8080/
 ```
 
-### Useful docker commands
+### Useful Docker Commands
 
 Here is a list of docker commands that might be useful
 
@@ -403,7 +492,7 @@ Here is a list of docker commands that might be useful
    docker start -ai {container}
 ```
 
-## Dragon server
+## Dragon Server
 
 `TODO: Add here information about the interaction with our server i will do this when we complete the project`
 
@@ -411,35 +500,717 @@ Here is a list of docker commands that might be useful
 
 ### REST API specification
 
-`TODO: Add here information relative to our API` \
-`TODO: Format this better`
+### User endpoints
 
-- User login Query
+#### User Registration
 
-```bash
-curl -X PUT http://localhost:8080/user -H "Content-Type: application/json" -d '{"username": "Marega", "password": "Maregod"}'
-```
+**Description**: Registration of a new user in the application's database.\
+**URL** : `/user`\
+**Method** : `POST`\
+**Authentication required** : NO \
+**Permissions required** : None
 
-- Expected Response
+##### Request Parameters
 
-```json
-{
-  "token": "Here goes a big string that is in fact a token"
-}
-```
+- username
+- password
+- email
 
-- User Registry Query
+##### Success Response
 
-```bash
-curl -X POST http://localhost:8080/user -H "Content-Type: application/json" -d '{"username": "HereGoesaName", "password": "HereGoesAPassword", "email":"HereGoesAnEmail"}'
-```
-
-- Expected Response
+**Code** : `201 CREATED`\
+**Content** : The id of the user that was inserted in the application's database.
 
 ```json
 {
-  "token": "Here goes a big string that is in fact a token"
+  "userId": 12829371
 }
+```
+
+##### Error Responses
+
+**Condition** : If the user to be inserted already exists in the application's database\
+**Code** : `409 CONFLICT`\
+**Content** : An error message
+
+```json
+{
+  "error": "User already exists"
+}
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+curl -X POST http://localhost:8080/user \
+     -H "Content-Type: application/json" \
+     -d '{ "username": "example", "password": "123", "email":"example@gmail.com"}'
+```
+
+#### User Authentication
+
+**Description**: User authentication with username and password.\
+**URL** : `/user`\
+**Method** : `PUT`\
+**Authentication required** : `NO`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+- username
+- password
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : An authentication token at that must be included in subsequent calls to REST API methods/resources that require a prior user authentication.
+
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
+  bWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjggMjE6MTE6NDcuNDM3NjgyIn0.Y9_
+  6Z6D4EBgBqj603qQG3UvHHOqxyGtHsL1Pdc1E6uc"
+}
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+curl -X PUT http://localhost:8080/user \
+     -H "Content-Type: application/json" \
+     -d '{"username": "example", "password": "example123"}'
+```
+
+#### User Listing
+
+**Description**: Lists all the users that are registered in the application's database\
+**URL** : `/user`\
+**Method** : `GET`\
+**Authentication required** : `NO`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Activity
+
+**URL** : `/user/activity`\
+**Description**: List auctions where a user had any activity, either as creator of the auction or as a bidder. This listing summarizes the details of each auction.
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Inbox
+
+**URL** : `/user/inbox`\
+**Description**: List all the messages/notifications that a given user has in its inbox.\
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Licitation
+
+**URL** : `/licitation/{auctionID}/{value}`\
+**Description**: A user can bid with a higher price on a particular
+auction, as long as the auction has not ended and there is no higher bid.
+to do and is at least higher than the minimum price.\
+**Method** : `PUT`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Message Posting
+
+**URL** : `/auction/{auctionID}/mural`\
+**Description**: The auction's mural on which is to be written comments, questions and clarifications regarding the auction.
+**Method** : `PUT`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Auction Editing
+
+**URL** : `/auction/{auctionID}`\
+**Description**: The auction's owner can adjust all textual descriptions related to a
+auction. All previous versions must be kept and can be consulted later for reference
+**Method** : `PUT`\
+**Authentication required** : `YES`\
+**Permissions required** : `Auction Ownership`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+### Auction Endpoints
+
+#### Auction Creation
+
+**URL** : `/auction`\
+**Description**: Creation of a new auction in the application's database.\
+**Method** : `POST`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### Auction Listing
+
+**URL** : `/auction`\
+**Description**: List all auctions that are present in the application's database.\
+**Method** : `GET`\
+**Authentication required** : `NO`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### Auction Searching
+
+**URL** : `/auction/{filter}`\
+**Description**: List ongoing auctions by code EAN / ISBN or by the auction's description. This listing presents the identifier and description of each auction.
+that meets the search criteria.\
+**Method** : `GET`\
+**Authentication required** : `NO`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### Auction Details
+
+**URL** : `/auction/{auctionID}`\
+**Description**: Obtain all details regarding the item description, the end of the auction, the messages exchanged and the history of bids made.\
+**Method** : `GET`\
+**Authentication required** : `NO`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+### Administrator Endpoints
+
+#### User Ban
+
+**URL** : `/user/{userID}`\
+**Description**: Ban a user. All auctions created by that
+user are cancelled. All bids placed by that user should be invalidated (even
+yet kept in the logs). When invalidating a bid in an auction, any higher bids
+shall also be dropped except for the best one, whose value becomes equal to the value of the one that is invalidated. A message is automatically created on the wall of the affected auctions regretting the inconvenience.\
+**Method** : `POST`\
+**Authentication required** : `YES`\
+**Permissions required** : `Administrator Privileges`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### Auction Cancellation
+
+**URL** : `/auction/{auctionID}`\
+**Description**:
+Cancel an auction. The auction can still be viewed by users, but is declared closed and no bids can be placed. All interested users receive a notification.\
+**Method** : `POST`\
+**Authentication required** : `YES`\
+**Permissions required** : `Administrator Privileges`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+### Application Statistics
+
+An administrator must be able to view statistics of the application's usage.
+
+#### Users With Most Auctions
+
+**URL** : `/statistics/users`\
+**Description**: Top 10 users with the most auctions created.\
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `Administrator Privileges`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### User Auction Winners
+
+**URL** : `/statistics/winners`\
+**Description**: Top 10 users who won the most auctions.\
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `Administrator Privileges`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
+```
+
+#### Auctions
+
+**URL** : `/statistics/auctions`\
+**Description**: Total number of auctions in the last 10 days.\
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `Administrator Privileges`
+
+##### Request Parameters
+
+`TODO`
+
+##### Success Response
+
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+TODO
+```
+
+##### Error Responses
+
+**Condition** : `TODO`\
+**Code** : `TODO`\
+**Content** : `TODO`
+
+```json
+ TODO
+```
+
+**or**\
+`TODO: If there are more responses add them bellow separation them bellow`
+
+##### Curl Query Example
+
+```bash
+TODO
 ```
 
 # Collaborators

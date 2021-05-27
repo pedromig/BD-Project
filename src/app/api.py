@@ -70,14 +70,14 @@ def login():
     values = (content["username"], content["password"])
 
     try:
-        res = cur.execute(statement1, values)
+        cur.execute(statement1, values)
         rows = cur.fetchall()
         if(len(rows) != 0):
             row = rows[0]
             token = jwt.encode({
                 'person_id': row[0],
-                'is_admin': False,  # This is a bad bad security flaw, should be fixed in the future
-                # Defaulting for a 24 hr token
+                # This is a bad bad security flaw, should be fixed in the future # Defaulting for a 24 hr token
+                'is_admin': False,
                 'expiration': str(datetime.utcnow() + timedelta(hours=24))
             }, app.config['SECRET_KEY'])
             logger.info(token)
@@ -90,14 +90,13 @@ def login():
             conn.close()
 
     try:
-        res = cur.execute(statement2, values)
+        cur.execute(statement2, values)
         rows = cur.fetchall()
         if(len(rows) != 0):
             row = rows[0]
             token = jwt.encode({
                 'person_id': row[0],
-                'is_admin': True,  # This is a bad bad security flaw, should be fixed in the future
-                # Defaulting for a 24 hr token
+                'is_admin': True,  # This is a bad bad security flaw, should be fixed in the future  # Defaulting for a 24 hr token
                 'expiration': str(datetime.utcnow() + timedelta(hours=24))
             }, app.config['SECRET_KEY'])
             logger.info(token)
@@ -111,11 +110,9 @@ def login():
             conn.close()
 
 # Register user (Can't register a user via webapp)
-
-
 @app.route("/user", methods=['POST'])
 def create_user():
-    logger.info("Authenticating a user")
+    logger.info("Creating a user")
     content = request.get_json()
 
     conn = create_connection()
