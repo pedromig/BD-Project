@@ -640,7 +640,7 @@ TODO
 #### User Activity
 
 **URL** : `/user/activity`\
-**Description**: List auctions where a user had any activity, either as creator of the auction or as a bidder. This listing summarizes the details of each auction.
+**Description**: List auctions where a user had any activity, either as creator of the auction or as a bidder. This listing summarizes the details of each auction.\
 **Method** : `GET`\
 **Authentication required** : `YES`\
 **Permissions required** : `None`
@@ -719,7 +719,7 @@ TODO
 
 #### User Licitation
 
-**URL** : `/licitation/{auctionID}/{value}`\
+**URL** : `/licitation/<auctionID>/<value>`\
 **Description**: A user can bid with a higher price on a particular
 auction, as long as the auction has not ended and there is no higher bid.
 to do and is at least higher than the minimum price.\
@@ -761,7 +761,7 @@ TODO
 
 #### User Message Posting
 
-**URL** : `/auction/{auctionID}/mural`\
+**URL** : `/auction/<auctionID>/mural`\
 **Description**: The auction's mural on which is to be written comments, questions and clarifications regarding the auction.
 **Method** : `PUT`\
 **Authentication required** : `YES`\
@@ -801,9 +801,9 @@ TODO
 
 #### User Auction Editing
 
-**URL** : `/auction/{auctionID}`\
+**URL** : `/auction/<auctionID>`\
 **Description**: The auction's owner can adjust all textual descriptions related to a
-auction. All previous versions must be kept and can be consulted later for reference
+auction. All previous versions must be kept and can be consulted later for reference\
 **Method** : `PUT`\
 **Authentication required** : `YES`\
 **Permissions required** : `Auction Ownership`
@@ -924,7 +924,7 @@ TODO
 
 #### Auction Searching
 
-**URL** : `/auction/{filter}`\
+**URL** : `/auction/<filter>`\
 **Description**: List ongoing auctions by code EAN / ISBN or by the auction's description. This listing presents the identifier and description of each auction.
 that meets the search criteria.\
 **Method** : `GET`\
@@ -965,7 +965,7 @@ TODO
 
 #### Auction Details
 
-**URL** : `/auction/{auctionID}`\
+**URL** : `/auction/<auctionID>`\
 **Description**: Obtain all details regarding the item description, the end of the auction, the messages exchanged and the history of bids made.\
 **Method** : `GET`\
 **Authentication required** : `NO`\
@@ -1050,7 +1050,7 @@ TODO
 
 #### Auction Cancellation
 
-**URL** : `/auction/{auctionID}`\
+**URL** : `/auction/<auctionID>`\
 **Description**:
 Cancel an auction. The auction can still be viewed by users, but is declared closed and no bids can be placed. All interested users receive a notification.\
 **Method** : `POST`\

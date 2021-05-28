@@ -14,16 +14,14 @@ app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c
 auth = None
 
 
-@app.route('/')
-def hello():
-    return """
-    Hi there!<br/>
-    <br/>
-    How did you get here?<br/>
-    <br/>
-    Anyway, this is the home page, in the future, all the documentation required to run this app will be listen in here<br/>
-    <br/>
-    """
+'''     Error   Codes      '''
+BAD_REQUEST_CODE = 400
+UNAUTHORIZED_CODE = 401
+FORBIDDEN_CODE = 403
+NOT_FOUND_CODE = 404
+INTERNAL_SERVER_CODE = 500
+
+# Token Interceptor
 
 
 def auth_user(func):
@@ -31,19 +29,26 @@ def auth_user(func):
     def decorated(*args, **kwargs):
         token = request.args.get('token')
         if not token:
-            return jsonify({'Error': 'Token is missing!'}), 401
-
+            return jsonify({'message': 'Error: Token is missing!', 'code': UNAUTHORIZED_CODE})
         try:
             logger.debug(token)
             jwt.decode(token, app.config['SECRET_KEY'])
         except Exception as e:
             logger.debug(e)
-            return jsonify({'Message': 'Invalid token'}), 403
+            return jsonify({'message': 'Error: Invalid token', 'code': FORBIDDEN_CODE})
         return func(*args, **kwargs)
     return decorated
 
 
-# Authenticate a user
+'''     Endpoints       '''
+
+# Root Endpoint
+@app.route('/')
+def hello():
+    return "Well, the description has was too big, but it is working"
+
+
+# Login Endpoint
 @app.route("/user", methods=['PUT'])
 def login():
     logger.info("Authenticating a user")
@@ -109,52 +114,86 @@ def login():
         if conn is not None:
             conn.close()
 
-# Register user (Can't register a user via webapp)
+# User Listing Endpoint
+@app.route("/user", methods=['GET'])
+def print_users():
+    try:
+        conn = create_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, password, email, banned FROM person;")
+        rows = cursor.fetchall()
+        return "<h2>Users</h2>" + str(rows).strip("[()]").replace("), (", "<br/>")
+    except:
+        return "Not Found :("
+    finally:
+        if conn is not None:
+            conn.close()
+
+# Sign up Endpoint
 @app.route("/user", methods=['POST'])
 def create_user():
-    logger.info("Creating a user")
-    content = request.get_json()
+    logger.info("Signing up a User")
 
+    content = request.get_json()
     conn = create_connection()
     cursor = conn.cursor()
 
     if "username" not in content or "password" not in content or "email" not in content:
-        return jsonify({"Error": 'Invalid Parameters in call'})
+        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
     logger.info(f'Request Content: {content}')
 
-    statement = """
-                INSERT INTO 
-                users(person_username, person_password,person_email) 
-                VALUES 
-                (%s, %s, %s);
+    put_person_stmt = """
+                INSERT INTO
+                person (username, password, email)
+                VALUES
+                (%s, %s, %s); 
                 """
-    statement2 = """
-                SELECT person_id
-                FROM users
-                WHERE person_username = %s
+    get_person_id_stmt = """
+                SELECT id
+                FROM person
+                WHERE username = %s;
                 """
 
-    values = (content["username"], content["password"], content["email"])
+    put_user_stmt = " INSERT INTO users(person_id) VALUES (%s);"
+
+    values = [content["username"], content["password"], content["email"]]
 
     try:
-        cursor.execute(statement, values)
-
-        conn.commit()
-        logger.info("Insert user successfully into the database Username : %s , Password : %s , email : %s , is_Admin : false",
-                    values[0], values[1], values[2])
-        cursor.execute(statement2, [values[0]])
+        # Put Person in person table
+        cursor.execute(put_person_stmt, values)
+        logger.info("passou primeiro")
+        # Get system-assigned personID
+        cursor.execute(get_person_id_stmt, [values[0]])
+        logger.info("passou segundo")
         rows = cursor.fetchall()
+        # logger.info("rows: "+ rows) #remove
+
+        # Put User in users table
+        cursor.execute(put_user_stmt, [rows[0][0]])
+
+        # Make Changes Permanent
+        conn.commit()
+
+        logger.info(
+            "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
         return jsonify({"userId": str(rows[0][0])})
 
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
-        return jsonify({"Error": str(error)})
+        return jsonify({"error": str(error)})
     finally:
         if conn is not None:
             conn.close()
 
 
+
+
+
+
+
+# Database Connection Establishment
 def create_connection():
     return pg.connect(user=auth.db_username,
                       password=auth.db_password,
