@@ -501,14 +501,14 @@ Here is a list of docker commands that might be useful
 ### REST API specification
 
 ### User endpoints
-
+---
 #### User Registration
 
 **Description**: Registration of a new user in the application's database.\
 **URL** : `/user`\
 **Method** : `POST`\
-**Authentication required** : NO \
-**Permissions required** : None
+**Authentication required** : `NO` \
+**Permissions required** : `None`
 
 ##### Request Parameters
 
@@ -518,7 +518,6 @@ Here is a list of docker commands that might be useful
 
 ##### Success Response
 
-**Code** : `201 CREATED`\
 **Content** : The id of the user that was inserted in the application's database.
 
 ```json
@@ -529,18 +528,28 @@ Here is a list of docker commands that might be useful
 
 ##### Error Responses
 
-**Condition** : If the user to be inserted already exists in the application's database\
-**Code** : `409 CONFLICT`\
-**Content** : An error message
+**Condition** : An internal server error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
 ```json
 {
-  "error": "User already exists"
+  "details": " ***Error Details*** ",
+  "error": 500
 }
 ```
 
 **or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**Condition** : Missing parameters\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "details": "Error: Invalid Parameters in call",
+  "error": 400
+}
+```
 
 ##### Curl Query Example
 
@@ -550,6 +559,7 @@ curl -X POST http://localhost:8080/user \
      -d '{ "username": "example", "password": "123", "email":"example@gmail.com"}'
 ```
 
+--- 
 #### User Authentication
 
 **Description**: User authentication with username and password.\
@@ -565,12 +575,11 @@ curl -X POST http://localhost:8080/user \
 
 ##### Success Response
 
-**Code** : `TODO`\
 **Content** : An authentication token at that must be included in subsequent calls to REST API methods/resources that require a prior user authentication.
 
 ```json
 {
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
+  "authToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
   bWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjggMjE6MTE6NDcuNDM3NjgyIn0.Y9_
   6Z6D4EBgBqj603qQG3UvHHOqxyGtHsL1Pdc1E6uc"
 }
@@ -578,25 +587,37 @@ curl -X POST http://localhost:8080/user \
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : User not found in the database\
+**Code** : `404 Not Found`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "details": "Error: User not Found ",
+  "error": 404
+}
 ```
 
 **or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**Condition** : Missing parameters\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "details": "Error: Invalid Parameters in call",
+  "error": 400
+}
+```
 
 ##### Curl Query Example
 
 ```bash
 curl -X PUT http://localhost:8080/user \
      -H "Content-Type: application/json" \
-     -d '{"username": "example", "password": "example123"}'
+     -d '{"username": "example", "password": "123"}'
 ```
-
+---
 #### User Listing
 
 **Description**: Lists all the users that are registered in the application's database\
@@ -606,37 +627,59 @@ curl -X PUT http://localhost:8080/user \
 **Permissions required** : `None`
 
 ##### Request Parameters
-
-`TODO`
+- None
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Content** : A json with all users data recorded in the database
 
 ```json
-TODO
+{
+  "users": [
+    [
+      1, 
+      "admin", 
+      "admin", 
+      "admin@admin.admin", 
+      false
+    ], 
+    [
+      2, 
+      "example", 
+      "123", 
+      "example@gmail.com", 
+      false
+    ], 
+    [
+      3, 
+      "example2", 
+      "321", 
+      "example2@gmail.com",
+      false
+    ]
+  ]
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : An internal server error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "details": "Error: Could not fetch users data",
+  "error": 500
+}
 ```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X GET "http://localhost:8080/user"
 ```
-
+---
 #### User Activity
 
 **URL** : `/user/activity`\
