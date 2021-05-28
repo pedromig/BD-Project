@@ -150,9 +150,9 @@ def create_user():
                 (%s, %s, %s); 
                 """
     get_person_id_stmt = """
-                SELECT person_id
-                FROM users
-                WHERE person_username = %s
+                SELECT id
+                FROM person
+                WHERE username = %s;
                 """
 
     put_user_stmt = " INSERT INTO users(person_id) VALUES (%s);"
@@ -162,11 +162,12 @@ def create_user():
     try:
         # Put Person in person table
         cursor.execute(put_person_stmt, values)
-        
+        logger.info("passou primeiro")
         # Get system-assigned personID
         cursor.execute(get_person_id_stmt, [values[0]])
+        logger.info("passou segundo")
         rows = cursor.fetchall()
-        logger.info("rows: "+ rows) #remove
+        # logger.info("rows: "+ rows) #remove
         
         # Put User in users table
         cursor.execute(put_user_stmt, [rows[0][0]])
