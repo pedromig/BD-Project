@@ -1,0 +1,9 @@
+DROP TABLE users;
+DROP TABLE administrator;
+DROP TABLE licitation;
+DROP TABLE message;
+DROP TABLE information;
+DROP TABLE notification_person;
+DROP TABLE notification;
+DROP TABLE auction;
+DROP TABLE person;
