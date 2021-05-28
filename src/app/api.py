@@ -21,9 +21,11 @@ FORBIDDEN_CODE = 403
 NOT_FOUND_CODE = 404
 INTERNAL_SERVER_CODE = 500
 
+######################################################################################
+#####################################    UTILS    ####################################
+######################################################################################
+
 # Token Interceptor
-
-
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -40,14 +42,28 @@ def auth_user(func):
         return func(*args, **kwargs)
     return decorated
 
+# Database Connection Establishment
+def create_connection():
+    return pg.connect(user=auth.db_username,
+                      password=auth.db_password,
+                      host=auth.db_hostname,
+                      port=auth.db_port,
+                      database=auth.db_database)
 
-'''     Endpoints       '''
+
+######################################################################################
+#####################################    ROOT    #####################################
+######################################################################################
 
 # Root Endpoint
 @app.route('/')
 def hello():
     return "Well, the description has was too big, but it is working"
 
+
+######################################################################################
+################################    SIGN UP / LOGIN    ###############################
+######################################################################################
 
 # Login Endpoint
 @app.route("/user", methods=['PUT'])
@@ -76,8 +92,8 @@ def login():
         rows = cursor.fetchall()
         token = jwt.encode({
             'person_id': rows[0][0],
-            # This is a bad bad security flaw, should be fixed in the future
-            'is_admin': False,
+            # This is a bad bad security flaw, should be fixed in the future and the is_admin is hardcoded
+            'is_admin': True if rows[0][0] == 1 else False,
             # Defaulting for a 24 hr token
             'expiration': str(datetime.utcnow() + timedelta(hours=24))
         }, app.config['SECRET_KEY'])
@@ -163,6 +179,10 @@ def create_user():
             conn.close()
 
 
+######################################################################################
+##############################    AUCTION OPERATIONS    ##############################
+######################################################################################
+
 @app.route("/auction", methods=['POST'])
 @auth_user
 def create_auction():
@@ -207,7 +227,6 @@ def create_auction():
             logger.error("There was an error : %s", error)
             return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
-
 # Auction Listing Endpoint
 # TODO: I am not finished yet
 @app.route("/auction", methods=['GET'])
@@ -230,14 +249,71 @@ def list_auctions():
             return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
 
-# Database Connection Establishment
-def create_connection():
-    return pg.connect(user=auth.db_username,
-                      password=auth.db_password,
-                      host=auth.db_hostname,
-                      port=auth.db_port,
-                      database=auth.db_database)
+######################################################################################
+###############################    ADMIN OPERATIONS    ############################### 
+######################################################################################
 
+# Cancel auction Endpoint
+@app.route("/admin/cancel", methods=['POST'])
+@auth_user
+def cancel_auction():
+    logger.info("Cancelling Auction")
+
+    content = request.get_json()
+
+    # Checking Form Parameters
+    if not {"id", "token"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+
+    logger.info(f'Request Content: {content}')
+    
+    # Checking if user in admin
+    decoded_token = jwt.decode(content['token'], app.config['SECRET_KEY'])
+    if(not decoded_token['is_admin']):
+        return jsonify({"error": "The user does not have admin privileges", "code": FORBIDDEN_CODE})
+    
+    # SQL queries
+    cancel_auction_stmt = """
+                        UPDATE auction 
+                        SET cancelled = true 
+                        WHERE id = %s;
+                        """
+
+    get_auction_licitations = """
+                            SELECT DISTINCT 
+                            """
+
+    with create_connection() as conn:
+        try:
+            # Create a view over the database
+            with conn.cursor() as cursor:
+                # Cancel Auction
+                cursor.execute(cancel_auction_stmt, [content["id"]])
+
+                # Notify all auction-related users
+
+                # Make Changes Permanent
+                conn.commit()
+                return 
+
+        except (Exception, pg.DatabaseError) as error:
+            logger.error("There was an error : %s", error)
+            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+# Ban User Endpoint
+@app.route("/admin/ban", methods=['POST'])
+@auth_user
+def ban_user():
+    return 
+
+# App Statistics Endpoint
+@app.route("/admin/stats", methods=['GET'])
+@auth_user
+def statistics():
+    return 
+
+
+######################################################################################
 
 if __name__ == "__main__":
 

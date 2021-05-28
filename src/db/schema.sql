@@ -7,11 +7,12 @@ CREATE TABLE person (
 	PRIMARY KEY(id)
 );
 CREATE TABLE licitation (
+	id BIGSERIAL,
 	price FLOAT(8) NOT NULL,
 	valid BOOL NOT NULL DEFAULT true,
-	auction_id BIGINT,
-	person_id BIGINT,
-	PRIMARY KEY(auction_id, person_id)
+	auction_id BIGINT NOT NULL,
+	person_id BIGINT NOT NULL,
+	PRIMARY KEY(id)
 );
 CREATE TABLE auction (
 	id BIGSERIAL,

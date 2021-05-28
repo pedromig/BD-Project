@@ -1,19 +1,19 @@
 -- User --
 INSERT INTO person (username, password, email)
 VALUES (
-        -- id: 0
+        -- id: 1
         'admin',
         'admin',
         'admin@admin.admin'
     ),
     (
-        -- id: 1
+        -- id: 2
         'Marega',
         'Maregod',
         'marega@god.kekw'
     ),
     (
-        -- id: 2
+        -- id: 3
         'Pedro Mitalves',
         'PoteDouro',
         'seradesta@might.actually'
@@ -32,9 +32,9 @@ INSERT INTO auction (
         end_date,
         person_id
     )
-VALUES (12344, 32.3, TIMESTAMP '2021-06-12 04:05:06', 1),
-    (420, 4.20, TIMESTAMP '2021-04-20 04:20:00', 1),
-    (123, 123.4, TIMESTAMP '2021-01-23 01:23:45', 2);
+VALUES (12344, 32.3, TIMESTAMP '2021-06-12 04:05:06', 2),
+    (420, 4.20, TIMESTAMP '2021-04-20 04:20:00', 2),
+    (123, 123.4, TIMESTAMP '2021-01-23 01:23:45', 3);
 -- Information --
 INSERT INTO information (title, description, auction_id)
 VALUES (
@@ -42,3 +42,9 @@ VALUES (
         'Solumn Dolorem',
         1
     );
+-- Licitations
+INSERT INTO licitation (price, auction_id, person_id) 
+VALUES 
+    (100, 1, 2),
+    (101, 1, 2),
+    (102, 1, 3);
