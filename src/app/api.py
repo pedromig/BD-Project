@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+from os import error
+from flask import Flask, json, jsonify, request
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -58,54 +59,32 @@ def login():
     cursor = conn.cursor()
 
     if "username" not in content or "password" not in content:
-        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+        return jsonify({"error": BAD_REQUEST_CODE, "details": "Error: Invalid Parameters in call"})
     
     logger.info(f'Request Content: {content}')
 
-    statement1 = """
+    get_person_id_stmt = """
                 SELECT id
                 FROM person
                 WHERE username = %s AND password = %s
                 """
 
-    values = (content["username"], content["password"])
+    values = [content["username"], content["password"]]
 
     try:
-        cursor.execute(statement1, values)
+        cursor.execute(get_person_id_stmt, values)
         rows = cursor.fetchall()
-        if(len(rows) != 0):
-            row = rows[0]
-            token = jwt.encode({
-                'person_id': row[0],
-                # This is a bad bad security flaw, should be fixed in the future # Defaulting for a 24 hr token
-                'is_admin': False,
-                'expiration': str(datetime.utcnow() + timedelta(hours=24))
-            }, app.config['SECRET_KEY'])
-            logger.info(token)
-            return {'token': token.decode('utf-8')}
+        token = jwt.encode({
+            'person_id': rows[0][0],
+            'is_admin': False,                                              # This is a bad bad security flaw, should be fixed in the future
+            'expiration': str(datetime.utcnow() + timedelta(hours=24))      # Defaulting for a 24 hr token
+        }, app.config['SECRET_KEY'])
+        logger.info(token)
+        return {'authToken': token.decode('utf-8')}
     except (Exception, pg.DatabaseError) as error:
-        logger.error("Request not found in user database, checking admin")
+        logger.error("Request not found in person table")
         logger.error(error)
-    finally:
-        if conn is not None:
-            conn.close()
-
-    try:
-        cur.execute(statement2, values)
-        rows = cur.fetchall()
-        if(len(rows) != 0):
-            row = rows[0]
-            token = jwt.encode({
-                'person_id': row[0],
-                'is_admin': True,  # This is a bad bad security flaw, should be fixed in the future  # Defaulting for a 24 hr token
-                'expiration': str(datetime.utcnow() + timedelta(hours=24))
-            }, app.config['SECRET_KEY'])
-            logger.info(token)
-            return jsonify({'token': token.decode('utf-8')})
-    except (Exception, pg.DatabaseError) as error:
-        logger.error("Request not found in user database, checking admin")
-        return jsonify({"Error": 'User not Found'}, 404)
-
+        return jsonify({"error": NOT_FOUND_CODE, "details": "Error: User not Found"})
     finally:
         if conn is not None:
             conn.close()
@@ -116,12 +95,11 @@ def print_users():
     try:
         conn = create_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, username, password, email, banned FROM person;")
+        cursor.execute("SELECT id, username, password, email, banned FROM person;")
         rows = cursor.fetchall()
-        return "<h2>Users</h2>" + str(rows).strip("[()]").replace("), (", "<br/>")
+        return jsonify({"users": rows}) 
     except:
-        return "Not Found :("
+        return jsonify({"error": INTERNAL_SERVER_CODE, "details": "Error: Could not fetch users data"})
     finally:
         if conn is not None:
             conn.close()
