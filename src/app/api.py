@@ -14,7 +14,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
 auth = None
 
-
 '''     Error   Codes      '''
 BAD_REQUEST_CODE = 400
 UNAUTHORIZED_CODE = 401
@@ -28,15 +27,16 @@ INTERNAL_SERVER_CODE = 500
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        token = request.args.get('token')
-        if not token:
-            return jsonify({'message': 'Error: Token is missing!', 'code': UNAUTHORIZED_CODE})
         try:
+            token = request.get_json()["token"]
+            if not token:
+                return jsonify({'error': 'Token is missing!', 'code': UNAUTHORIZED_CODE})
+
             logger.debug(token)
             jwt.decode(token, app.config['SECRET_KEY'])
         except Exception as e:
             logger.debug(e)
-            return jsonify({'message': 'Error: Invalid token', 'code': FORBIDDEN_CODE})
+            return jsonify({'error': 'Invalid token', 'code': FORBIDDEN_CODE})
         return func(*args, **kwargs)
     return decorated
 
@@ -59,8 +59,8 @@ def login():
     cursor = conn.cursor()
 
     if "username" not in content or "password" not in content:
-        return jsonify({"error": BAD_REQUEST_CODE, "details": "Error: Invalid Parameters in call"})
-    
+        return jsonify({"code": BAD_REQUEST_CODE, "error": "Invalid Parameters in call"})
+
     logger.info(f'Request Content: {content}')
 
     get_person_id_stmt = """
@@ -76,15 +76,17 @@ def login():
         rows = cursor.fetchall()
         token = jwt.encode({
             'person_id': rows[0][0],
-            'is_admin': False,                                              # This is a bad bad security flaw, should be fixed in the future
-            'expiration': str(datetime.utcnow() + timedelta(hours=24))      # Defaulting for a 24 hr token
+            # This is a bad bad security flaw, should be fixed in the future
+            'is_admin': False,
+            # Defaulting for a 24 hr token
+            'expiration': str(datetime.utcnow() + timedelta(hours=24))
         }, app.config['SECRET_KEY'])
         logger.info(token)
-        return {'authToken': token.decode('utf-8')}
+        return {'token': token.decode('utf-8')}
     except (Exception, pg.DatabaseError) as error:
         logger.error("Request not found in person table")
         logger.error(error)
-        return jsonify({"error": NOT_FOUND_CODE, "details": "Error: User not Found"})
+        return jsonify({"code": NOT_FOUND_CODE, "error": "User not Found"})
     finally:
         if conn is not None:
             conn.close()
@@ -95,11 +97,12 @@ def print_users():
     try:
         conn = create_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password, email, banned FROM person;")
+        cursor.execute(
+            "SELECT id, username, password, email, banned FROM person;")
         rows = cursor.fetchall()
-        return jsonify({"users": rows}) 
+        return jsonify({"users": rows})
     except:
-        return jsonify({"error": INTERNAL_SERVER_CODE, "details": "Error: Could not fetch users data"})
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": "Could not fetch users data"})
     finally:
         if conn is not None:
             conn.close()
@@ -114,7 +117,7 @@ def create_user():
     cursor = conn.cursor()
 
     if "username" not in content or "password" not in content or "email" not in content:
-        return jsonify({'error': BAD_REQUEST_CODE, "details": 'Error: Invalid Parameters in call'})
+        return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
 
     logger.info(f'Request Content: {content}')
 
@@ -150,11 +153,11 @@ def create_user():
 
         logger.info(
             "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
-        return jsonify({"userId": str(rows[0][0])})
+        return jsonify({"id": str(rows[0][0])})
 
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
-        return jsonify({"error": INTERNAL_SERVER_CODE, "details": str(error)})
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     finally:
         if conn is not None:
             conn.close()
@@ -165,18 +168,16 @@ def create_user():
 def create_auction():
     logger.info("Creating an auction")
 
-    args = {"item", "min_price", "end_date", "person_id"}
     content = request.get_json()
-
-    if not args.issubset(content):
-        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+    if not {"item", "min_price", "end_date", "person_id"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
     logger.info(f'Request Content: {content}')
 
     # SQL queries
     auction_create_stmt = """
             INSERT INTO auction (item, min_price, end_date, person_id)
-            VALUES (%s, %s, TIMESTAMP '%s', %s);
+            VALUES (%s, %s, TIMESTAMP %s, %s);
             """
 
     get_auction_id_stmt = """
@@ -190,7 +191,8 @@ def create_auction():
             # Create a view over the database
             with conn.cursor() as cursor:
                 # Insert auction into the database
-                values = [content[v] for v in args]
+                values = [content["item"], content["min_price"],
+                          content["end_date"], content["person_id"]]
                 cursor.execute(auction_create_stmt, values)
 
                 # Query ID of the inserted auction
@@ -199,7 +201,7 @@ def create_auction():
 
                 # Make Changes Permanent
                 conn.commit()
-                return jsonify({"auctionId": str(rows[0][0])})
+                return jsonify({"id": str(rows[0][0])})
 
         except (Exception, pg.DatabaseError) as error:
             logger.error("There was an error : %s", error)

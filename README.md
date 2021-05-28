@@ -27,6 +27,7 @@ database through an SQL interface.
 ## Index
 
 - [BD-Project](#bd-project)
+
   - [About the project](#about-the-project)
   - [Index](#index)
   - [Technologies Used](#technologies-used)
@@ -49,94 +50,26 @@ database through an SQL interface.
     - [REST API specification](#rest-api-specification)
     - [User endpoints](#user-endpoints)
       - [User Registration](#user-registration)
-        - [Request Parameters](#request-parameters)
-        - [Success Response](#success-response)
-        - [Error Responses](#error-responses)
-        - [Curl Query Example](#curl-query-example)
       - [User Authentication](#user-authentication)
-        - [Request Parameters](#request-parameters-1)
-        - [Success Response](#success-response-1)
-        - [Error Responses](#error-responses-1)
-        - [Curl Query Example](#curl-query-example-1)
       - [User Listing](#user-listing)
-        - [Request Parameters](#request-parameters-2)
-        - [Success Response](#success-response-2)
-        - [Error Responses](#error-responses-2)
-        - [Curl Query Example](#curl-query-example-2)
       - [User Activity](#user-activity)
-        - [Request Parameters](#request-parameters-3)
-        - [Success Response](#success-response-3)
-        - [Error Responses](#error-responses-3)
-        - [Curl Query Example](#curl-query-example-3)
       - [User Inbox](#user-inbox)
-        - [Request Parameters](#request-parameters-4)
-        - [Success Response](#success-response-4)
-        - [Error Responses](#error-responses-4)
-        - [Curl Query Example](#curl-query-example-4)
       - [User Licitation](#user-licitation)
-        - [Request Parameters](#request-parameters-5)
-        - [Success Response](#success-response-5)
-        - [Error Responses](#error-responses-5)
-        - [Curl Query Example](#curl-query-example-5)
       - [User Message Posting](#user-message-posting)
-        - [Request Parameters](#request-parameters-6)
-        - [Success Response](#success-response-6)
-        - [Error Responses](#error-responses-6)
-        - [Curl Query Example](#curl-query-example-6)
       - [User Auction Editing](#user-auction-editing)
-        - [Request Parameters](#request-parameters-7)
-        - [Success Response](#success-response-7)
-        - [Error Responses](#error-responses-7)
-        - [Curl Query Example](#curl-query-example-7)
     - [Auction Endpoints](#auction-endpoints)
       - [Auction Creation](#auction-creation)
-        - [Request Parameters](#request-parameters-8)
-        - [Success Response](#success-response-8)
-        - [Error Responses](#error-responses-8)
-        - [Curl Query Example](#curl-query-example-8)
       - [Auction Listing](#auction-listing)
-        - [Request Parameters](#request-parameters-9)
-        - [Success Response](#success-response-9)
-        - [Error Responses](#error-responses-9)
-        - [Curl Query Example](#curl-query-example-9)
       - [Auction Searching](#auction-searching)
-        - [Request Parameters](#request-parameters-10)
-        - [Success Response](#success-response-10)
-        - [Error Responses](#error-responses-10)
-        - [Curl Query Example](#curl-query-example-10)
       - [Auction Details](#auction-details)
-        - [Request Parameters](#request-parameters-11)
-        - [Success Response](#success-response-11)
-        - [Error Responses](#error-responses-11)
-        - [Curl Query Example](#curl-query-example-11)
     - [Administrator Endpoints](#administrator-endpoints)
       - [User Ban](#user-ban)
-        - [Request Parameters](#request-parameters-12)
-        - [Success Response](#success-response-12)
-        - [Error Responses](#error-responses-12)
-        - [Curl Query Example](#curl-query-example-12)
       - [Auction Cancellation](#auction-cancellation)
-        - [Request Parameters](#request-parameters-13)
-        - [Success Response](#success-response-13)
-        - [Error Responses](#error-responses-13)
-        - [Curl Query Example](#curl-query-example-13)
     - [Application Statistics](#application-statistics)
       - [Users With Most Auctions](#users-with-most-auctions)
-        - [Request Parameters](#request-parameters-14)
-        - [Success Response](#success-response-14)
-        - [Error Responses](#error-responses-14)
-        - [Curl Query Example](#curl-query-example-14)
       - [User Auction Winners](#user-auction-winners)
-        - [Request Parameters](#request-parameters-15)
-        - [Success Response](#success-response-15)
-        - [Error Responses](#error-responses-15)
-        - [Curl Query Example](#curl-query-example-15)
       - [Auctions](#auctions)
-        - [Request Parameters](#request-parameters-16)
-        - [Success Response](#success-response-16)
-        - [Error Responses](#error-responses-16)
-        - [Curl Query Example](#curl-query-example-16)
-- [Collaborators](#collaborators)
+  - [Collaborators](#collaborators)
 
 ## Technologies Used
 
@@ -501,7 +434,9 @@ Here is a list of docker commands that might be useful
 ### REST API specification
 
 ### User endpoints
+
 ---
+
 #### User Registration
 
 **Description**: Registration of a new user in the application's database.\
@@ -522,7 +457,7 @@ Here is a list of docker commands that might be useful
 
 ```json
 {
-  "userId": 12829371
+  "id": 12829371
 }
 ```
 
@@ -534,8 +469,8 @@ Here is a list of docker commands that might be useful
 
 ```json
 {
-  "details": " ***Error Details*** ",
-  "error": 500
+  "error": " ***Error Details*** ",
+  "code": 500
 }
 ```
 
@@ -546,8 +481,8 @@ Here is a list of docker commands that might be useful
 
 ```json
 {
-  "details": "Error: Invalid Parameters in call",
-  "error": 400
+  "error": "Invalid Parameters in call",
+  "code": 400
 }
 ```
 
@@ -559,7 +494,8 @@ curl -X POST http://localhost:8080/user \
      -d '{ "username": "example", "password": "123", "email":"example@gmail.com"}'
 ```
 
---- 
+---
+
 #### User Authentication
 
 **Description**: User authentication with username and password.\
@@ -579,7 +515,7 @@ curl -X POST http://localhost:8080/user \
 
 ```json
 {
-  "authToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
   bWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjggMjE6MTE6NDcuNDM3NjgyIn0.Y9_
   6Z6D4EBgBqj603qQG3UvHHOqxyGtHsL1Pdc1E6uc"
 }
@@ -593,8 +529,8 @@ curl -X POST http://localhost:8080/user \
 
 ```json
 {
-  "details": "Error: User not Found ",
-  "error": 404
+  "error": "User not Found ",
+  "code": 404
 }
 ```
 
@@ -605,8 +541,8 @@ curl -X POST http://localhost:8080/user \
 
 ```json
 {
-  "details": "Error: Invalid Parameters in call",
-  "error": 400
+  "error": "Invalid Parameters in call",
+  "code": 400
 }
 ```
 
@@ -617,7 +553,9 @@ curl -X PUT http://localhost:8080/user \
      -H "Content-Type: application/json" \
      -d '{"username": "example", "password": "123"}'
 ```
+
 ---
+
 #### User Listing
 
 **Description**: Lists all the users that are registered in the application's database\
@@ -627,6 +565,7 @@ curl -X PUT http://localhost:8080/user \
 **Permissions required** : `None`
 
 ##### Request Parameters
+
 - None
 
 ##### Success Response
@@ -636,27 +575,9 @@ curl -X PUT http://localhost:8080/user \
 ```json
 {
   "users": [
-    [
-      1, 
-      "admin", 
-      "admin", 
-      "admin@admin.admin", 
-      false
-    ], 
-    [
-      2, 
-      "example", 
-      "123", 
-      "example@gmail.com", 
-      false
-    ], 
-    [
-      3, 
-      "example2", 
-      "321", 
-      "example2@gmail.com",
-      false
-    ]
+    [1, "admin", "admin", "admin@admin.admin", false],
+    [2, "example", "123", "example@gmail.com", false],
+    [3, "example2", "321", "example2@gmail.com", false]
   ]
 }
 ```
@@ -669,8 +590,8 @@ curl -X PUT http://localhost:8080/user \
 
 ```json
 {
-  "details": "Error: Could not fetch users data",
-  "error": 500
+  "error": "Could not fetch users data",
+  "code": 500
 }
 ```
 
@@ -679,7 +600,9 @@ curl -X PUT http://localhost:8080/user \
 ```bash
 curl -X GET "http://localhost:8080/user"
 ```
+
 ---
+
 #### User Activity
 
 **URL** : `/user/activity`\
@@ -1256,7 +1179,7 @@ TODO
 TODO
 ```
 
-# Collaborators
+## Collaborators
 
 - [Miguel Rabuge](https://github.com/MikeLrUC)
 - [Duarte Dias](https://github.com/TLDart)
