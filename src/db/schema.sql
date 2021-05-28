@@ -15,7 +15,7 @@ CREATE TABLE licitation (
 );
 CREATE TABLE auction (
 	id BIGSERIAL,
-	item BIGINT NOT NULL,
+	item BIGINT NOT NULL UNIQUE,
 	min_price FLOAT(8) NOT NULL DEFAULT 0,
 	end_date TIMESTAMP NOT NULL,
 	cancelled BOOL NOT NULL DEFAULT false,

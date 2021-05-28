@@ -148,7 +148,7 @@ def create_user():
                 INSERT INTO
                 person (username, password, email)
                 VALUES
-                (%s, %s, %s); 
+                (%s, %s, %s);
                 """
     get_person_id_stmt = """
                 SELECT id
@@ -188,9 +188,72 @@ def create_user():
             conn.close()
 
 
+@app.route("/auction", methods=['POST'])
+@auth_user
+def create_auction():
+    logger.info("Creating an auction")
+
+    args = {"item", "min_price", "end_date", "person_id"}
+    content = request.get_json()
+
+    if not args.issubset(content):
+        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+
+    logger.info(f'Request Content: {content}')
+
+    # SQL queries
+    auction_create_stmt = """
+            INSERT INTO auction (item, min_price, end_date, person_id)
+            VALUES (%s, %s, TIMESTAMP '%s', %s);
+            """
+
+    get_auction_id_stmt = """
+                SELECT id
+                FROM auction
+                WHERE item = %s;
+                """
+
+    with create_connection() as conn:
+        try:
+            # Create a view over the database
+            with conn.cursor() as cursor:
+                # Insert auction into the database
+                values = [content[v] for v in args]
+                cursor.execute(auction_create_stmt, values)
+
+                # Query ID of the inserted auction
+                cursor.execute(get_auction_id_stmt, [values[0]])
+                rows = cursor.fetchall()
+
+                # Make Changes Permanent
+                conn.commit()
+                return jsonify({"auctionId": str(rows[0][0])})
+
+        except (Exception, pg.DatabaseError) as error:
+            logger.error("There was an error : %s", error)
+            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
 
+# Auction Listing Endpoint
+# TODO: I am not finished yet
+@app.route("/auction", methods=['GET'])
+def list_auctions():
 
+    auction_list_stmt = """
+                SELECT id, item, min_price, end_date, cancelled, person_id
+                FROM auction;
+                """
+
+    with create_connection() as conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(auction_list_stmt)
+                rows = cursor.fetchall()
+                return jsonify(rows)
+
+        except (Exception, pg.DatabaseError) as error:
+            logger.error("There was an error : %s", error)
+            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
 
 # Database Connection Establishment
