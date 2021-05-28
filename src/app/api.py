@@ -108,7 +108,7 @@ def login():
             conn.close()
 
 # User Listing Endpoint
-@app.route("/user", methods=['GET'])
+@app.route("/users", methods=['GET'])
 def print_users():
     try:
         conn = create_connection()

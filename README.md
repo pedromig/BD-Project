@@ -559,7 +559,7 @@ curl -X PUT http://localhost:8080/user \
 #### User Listing
 
 **Description**: Lists all the users that are registered in the application's database\
-**URL** : `/user`\
+**URL** : `/users`\
 **Method** : `GET`\
 **Authentication required** : `NO`\
 **Permissions required** : `None`
@@ -598,7 +598,7 @@ curl -X PUT http://localhost:8080/user \
 ##### Curl Query Example
 
 ```bash
-curl -X GET "http://localhost:8080/user"
+curl -X GET "http://localhost:8080/users"
 ```
 
 ---
