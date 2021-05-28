@@ -507,8 +507,8 @@ Here is a list of docker commands that might be useful
 **Description**: Registration of a new user in the application's database.\
 **URL** : `/user`\
 **Method** : `POST`\
-**Authentication required** : NO \
-**Permissions required** : None
+**Authentication required** : `NO` \
+**Permissions required** : `None`
 
 ##### Request Parameters
 
@@ -518,7 +518,6 @@ Here is a list of docker commands that might be useful
 
 ##### Success Response
 
-**Code** : `201 CREATED`\
 **Content** : The id of the user that was inserted in the application's database.
 
 ```json
@@ -529,18 +528,29 @@ Here is a list of docker commands that might be useful
 
 ##### Error Responses
 
-**Condition** : If the user to be inserted already exists in the application's database\
-**Code** : `409 CONFLICT`\
-**Content** : An error message
+**Condition** : An internal server error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
+`FIXME: os detalhes não são pedidos no enunciado, só mesmo o código do erro`
 ```json
 {
-  "error": "User already exists"
+  "error": 500,
+  "details": " ***Error Details*** "
 }
 ```
 
 **or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**Condition** : Missing parameters\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": 400,
+  "details": "Error: Invalid Parameters in call"
+}
+```
 
 ##### Curl Query Example
 

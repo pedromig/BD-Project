@@ -55,28 +55,24 @@ def login():
     content = request.get_json()
 
     conn = create_connection()
-    cur = conn.cursor()
+    cursor = conn.cursor()
 
     if "username" not in content or "password" not in content:
-        return jsonify({"Error": 'Invalid Parameters in call'})
+        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+    
     logger.info(f'Request Content: {content}')
 
     statement1 = """
-                SELECT person_id
-                FROM users
-                WHERE person_username = %s AND person_password = %s
-                """
-    statement2 = """
-                SELECT person_id
-                FROM administrator
-                WHERE person_username = %s AND person_password = %s
+                SELECT id
+                FROM person
+                WHERE username = %s AND password = %s
                 """
 
     values = (content["username"], content["password"])
 
     try:
-        cur.execute(statement1, values)
-        rows = cur.fetchall()
+        cursor.execute(statement1, values)
+        rows = cursor.fetchall()
         if(len(rows) != 0):
             row = rows[0]
             token = jwt.encode({
@@ -140,7 +136,7 @@ def create_user():
     cursor = conn.cursor()
 
     if "username" not in content or "password" not in content or "email" not in content:
-        return jsonify({'message': 'Error: Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+        return jsonify({'error': BAD_REQUEST_CODE, "details": 'Error: Invalid Parameters in call'})
 
     logger.info(f'Request Content: {content}')
 
@@ -163,12 +159,10 @@ def create_user():
     try:
         # Put Person in person table
         cursor.execute(put_person_stmt, values)
-        logger.info("passou primeiro")
+
         # Get system-assigned personID
         cursor.execute(get_person_id_stmt, [values[0]])
-        logger.info("passou segundo")
         rows = cursor.fetchall()
-        # logger.info("rows: "+ rows) #remove
 
         # Put User in users table
         cursor.execute(put_user_stmt, [rows[0][0]])
@@ -182,7 +176,7 @@ def create_user():
 
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
-        return jsonify({"error": str(error)})
+        return jsonify({"error": INTERNAL_SERVER_CODE, "details": str(error)})
     finally:
         if conn is not None:
             conn.close()
