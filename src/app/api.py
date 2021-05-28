@@ -46,7 +46,7 @@ def auth_user(func):
 # Root Endpoint
 @app.route('/')
 def hello():
-    return "Well, the description has was too big, but it is working"
+    return "Well, the description has was too big, but it is working test"
 
 
 # Login Endpoint
@@ -268,6 +268,7 @@ if __name__ == "__main__":
     # Set up the logging
     logging.basicConfig(filename="logs/log_file.log")
     logger = logging.getLogger('logger')
+
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

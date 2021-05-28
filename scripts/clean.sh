@@ -8,4 +8,5 @@ DB="db"
 
 docker rm "${API}" "${DB}" -v
 docker rmi "${API}:latest" "${DB}:latest" -f
+docker image prune -f
 rm -rf ../src/app/logs

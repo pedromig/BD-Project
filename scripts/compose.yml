@@ -12,7 +12,7 @@ services:
     build: ../src/app
     container_name: auction-rest-api
     volumes:
-      - "../src/app/logs:/app/logs"
+      - "../src/app/:/app/"
     ports:
       - "8080:5000"
     depends_on:
