@@ -316,7 +316,7 @@ def write_notif(auctionID, author, message):
     return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 # Inserting a message into the mural
-@app.route("/<auctionID>/mural", methods=['PUT'])
+@app.route("/<auctionID>/mural", methods=['POST'])
 @auth_user
 def write_msg(auctionID):
     content = request.get_json()
@@ -336,8 +336,8 @@ def write_msg(auctionID):
     return write_notif(auctionID, author, message)
 
 # List all messages in message board
-@app.route("/<auctionID>/mural", methods=['GET'])
-# @auth_user Use this later?
+@app.route("/<auctionID>/mural", methods=['PUT'])
+@auth_user
 def list_msg(auctionID):
     conn = create_connection()
     cursor = conn.cursor()
@@ -346,20 +346,17 @@ def list_msg(auctionID):
                 """
     values = (auctionID)
     try:
-        with conn.cursor() as cursor:
-            cursor.execute(list_msg_stmt, values)
-            rows = cursor.fetchall()
-            logger.info(
-                "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
-            return jsonify(rows)
-
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(list_msg_stmt, values)
+                rows = cursor.fetchall()
+                logger.info(
+                    "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
+        conn.close()      
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    finally:
-        if conn is not None:
-            conn.close()
-
+    return jsonify(rows)
 ######################################################################################
 ###############################    ADMIN OPERATIONS    ###############################
 ######################################################################################
