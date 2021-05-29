@@ -15,13 +15,19 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
 auth = None
 
-'''     Error   Codes      '''
+'''     Codes      '''
+SUCCESS_CODE = 201
+
 BAD_REQUEST_CODE = 400
 UNAUTHORIZED_CODE = 401
 FORBIDDEN_CODE = 403
 NOT_FOUND_CODE = 404
 INTERNAL_SERVER_CODE = 500
 SUCCESS_CODE = 201
+
+######################################################################################
+#####################################    UTILS    ####################################
+######################################################################################
 
 # Token Interceptor
 
@@ -41,14 +47,30 @@ def auth_user(func):
         return func(*args, **kwargs)
     return decorated
 
+# Database Connection Establishment
 
-'''     Endpoints       '''
+
+def create_connection():
+    return pg.connect(user=auth.db_username,
+                      password=auth.db_password,
+                      host=auth.db_hostname,
+                      port=auth.db_port,
+                      database=auth.db_database)
+
+
+######################################################################################
+#####################################    ROOT    #####################################
+######################################################################################
 
 # Root Endpoint
 @app.route('/')
 def hello():
     return "Well, the description has was too big, but it is working"
 
+
+######################################################################################
+################################    SIGN UP / LOGIN    ###############################
+######################################################################################
 
 # Login Endpoint
 @app.route("/user", methods=['PUT'])
@@ -77,8 +99,8 @@ def login():
         rows = cursor.fetchall()
         token = jwt.encode({
             'person_id': rows[0][0],
-            # This is a bad bad security flaw, should be fixed in the future
-            'is_admin': False,
+            # This is a bad bad security flaw, should be fixed in the future and the is_admin is hardcoded
+            'is_admin': True if rows[0][0] == 1 else False,
             # Defaulting for a 24 hr token
             'expiration': str(datetime.utcnow() + timedelta(hours=24))
         }, app.config['SECRET_KEY'])
@@ -163,6 +185,10 @@ def create_user():
             conn.close()
 
 
+######################################################################################
+##############################    AUCTION OPERATIONS    ##############################
+######################################################################################
+
 @app.route("/auction", methods=['POST'])
 @auth_user
 def create_auction():
@@ -214,7 +240,6 @@ def create_auction():
 
     return jsonify({"id": id})
 
-
 # Auction Listing Endpoint
 # TODO: I am not finished yet
 @app.route("/auctions", methods=['GET'])
@@ -240,6 +265,7 @@ def list_auctions():
         except (Exception, pg.DatabaseError) as error:
             logger.error("There was an error : %s", error)
             return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
 
 # Inserting a message into the mural
 @app.route("/<auctionID>/mural", methods=['PUT'])
@@ -302,7 +328,7 @@ def list_msg(auctionID):
             cursor.execute(list_msg_stmt, values)
             rows = cursor.fetchall()
             logger.info(
-                "Sucessfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
+                "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
             return jsonify(rows)
 
     except (Exception, pg.DatabaseError) as error:
@@ -312,16 +338,97 @@ def list_msg(auctionID):
         if conn is not None:
             conn.close()
 
-# Database Connection Establishment
+######################################################################################
+###############################    ADMIN OPERATIONS    ###############################
+######################################################################################
+
+# Cancel auction Endpoint
+@app.route("/admin/cancel", methods=['POST'])
+@auth_user
+def cancel_auction():
+    logger.info("Cancelling Auction")
+
+    content = request.get_json()
+
+    # Checking Form Parameters
+    if not {"id", "token"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+
+    logger.info(f'Request Content: {content}')
+
+    # Checking if user in admin
+    decoded_token = jwt.decode(content['token'], app.config['SECRET_KEY'])
+    if(not decoded_token['is_admin']):
+        return jsonify({"error": "The user does not have admin privileges", "code": FORBIDDEN_CODE})
+
+    # SQL queries
+    cancel_auction_stmt = """
+                        UPDATE auction 
+                        SET cancelled = true 
+                        WHERE id = %s;
+                        """
+
+    get_auction_people_ids_stmt = """
+                            SELECT DISTINCT person_id 
+                            FROM licitation 
+                            WHERE auction_id = %s;
+                            """
+    put_notification_stmt = "INSERT INTO notification(content, time_date) VALUES (%s, %s);"
+    get_notification_id_stmt = "SELECT MAX(id) FROM notification;"
+    associate_notification_stmt = "INSERT INTO inbox_messages(notification_id, person_id) VALUES (%s, %s);"
+
+    with create_connection() as conn:
+        try:
+            # Create a view over the database
+            with conn.cursor() as cursor:
+                # Cancel Auction
+                cursor.execute(cancel_auction_stmt, [content["id"]])
+
+                # Create Notification
+                logger.info("Creating notification")
+                cursor.execute(put_notification_stmt, [
+                               "The auction was cancelled by the application administrator", datetime.now()])
+
+                # Get notification ID
+                cursor.execute(get_notification_id_stmt)
+                notification_id = cursor.fetchall()[0][0]
+
+                # Notify all auction-related users
+                logger.info("Notifying users")
+                cursor.execute(get_auction_people_ids_stmt, [content["id"]])
+                people_ids = cursor.fetchall()
+
+                for entry in people_ids:
+                    cursor.execute(associate_notification_stmt,
+                                   [notification_id, entry[0]])
+
+                # Make Changes Permanent
+                conn.commit()
+
+                # return response
+                logger.info("Auction cancel operation successful")
+                return jsonify({"response": "Successful", "code": SUCCESS_CODE})
+
+        except (Exception, pg.DatabaseError) as error:
+            logger.error("There was an error : %s", error)
+            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+# Ban User Endpoint
+@app.route("/admin/ban", methods=['POST'])
+@auth_user
+def ban_user():
+    return
+
+# App Statistics Endpoint
+@app.route("/admin/stats", methods=['GET'])
+@auth_user
+def statistics():
+    return
 
 
-def create_connection():
-    return pg.connect(user=auth.db_username,
-                      password=auth.db_password,
-                      host=auth.db_hostname,
-                      port=auth.db_port,
-                      database=auth.db_database)
-
+########################################################################################
+##################################### MAIN #############################################
+########################################################################################
 
 if __name__ == "__main__":
 
