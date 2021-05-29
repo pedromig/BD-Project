@@ -602,8 +602,9 @@ def ban_user():
                     cursor.execute(update_licitations_price_stmt, [
                                    auction_id, min_user_bid, max_valid_bid])
 
-                    # All licitations maximum price are updated to minimum banned user licitation price
-                    cursor.execute(update_max_stmt, [
+                    # All licitations maximum price are updated to minimum banned user licitation price if
+                    if (min_user_bid < max_valid_bid):
+                        cursor.execute(update_max_stmt, [
                                    min_user_bid, max_valid_bid])
 
         conn.close()
@@ -618,8 +619,74 @@ def ban_user():
 @app.route("/admin/stats", methods=['GET'])
 @auth_user
 def statistics():
-    return
+    logger.info("Showing Statistics")
 
+    content = request.get_json()
+
+    # Checking Form Parameters
+    if not {"token"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+
+    logger.info(f'Request Content: {content}')
+
+    # Checking if user in admin
+    decoded_token = jwt.decode(content['token'], app.config['SECRET_KEY'])
+    if(not decoded_token['is_admin']):
+        return jsonify({"error": "The user does not have admin privileges", "code": FORBIDDEN_CODE})
+
+    # SQL queries
+    get_top_10_users_with_more_auctions_created_stmt = """
+        SELECT person_id, count(*) as "auctions"
+        FROM auction
+        GROUP BY person_id
+        ORDER BY "auctions" DESC
+        LIMIT 10;
+        """
+
+    get_top_10_winners_stmt = """
+        SELECT person_id, count(ended_valid_auction_winners.person_id) AS "counter"
+        FROM (
+            SELECT ended_valid_auctions.id, winners.person_id
+            FROM (
+                SELECT id 
+                FROM auction 
+                WHERE (end_date < %s)
+                AND cancelled = false
+            ) AS ended_valid_auctions
+            JOIN (
+                SELECT person_id, auction_id, price
+                FROM licitation
+                WHERE (auction_id, price) IN (
+                    SELECT auction_id, MAX(price)
+                    FROM licitation
+                    WHERE valid = true
+                    GROUP BY auction_id
+                ) AND valid = true
+            ) AS winners 
+            ON ended_valid_auctions.id = winners.auction_id
+        ) AS ended_valid_auction_winners
+        GROUP BY person_id
+        ORDER BY "counter" DESC
+        LIMIT 10;
+        """
+
+    get_total_auction_n_last_10_days_stmt = """
+        
+    """
+    
+    try:
+        with create_connection() as conn:
+            # Create a view over the database
+            with conn.cursor() as cursor:
+                pass
+
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    logger.info("Statistics operation successful")
+    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 ########################################################################################
 #################################     MAIN     #########################################
