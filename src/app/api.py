@@ -184,6 +184,32 @@ def create_user():
         if conn is not None:
             conn.close()
 
+@app.route("/user/inbox", methods=['PUT'])
+@auth_user
+def list_user_inbox():
+    logger.info("Helloasia")
+    content = request.get_json()
+    token = content["token"]
+    decoded = jwt.decode(token, app.config['SECRET_KEY'])
+    author = decoded['person_id']
+    list_user_inbox_stmt = """
+               SELECT * 
+               FROM inbox_messages, notification
+               WHERE inbox_messages.notification_id = notification.id and inbox_messages.person_id = %s;
+                """
+    values = [author] #BUG using to list to hotfix this
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(list_user_inbox_stmt, values)
+                rows = cursor.fetchall()
+                logger.info(
+                    "Successfully fetched %d rows from user %s Notification Board ", len(rows), author)
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+    return jsonify(rows)
 
 ######################################################################################
 ##############################    AUCTION OPERATIONS    ##############################
