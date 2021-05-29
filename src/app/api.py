@@ -2,6 +2,7 @@ from os import error
 from flask import Flask, json, jsonify, request
 from datetime import datetime, timedelta
 from functools import wraps
+from flask.globals import current_app
 from flask.json.tag import PassDict
 
 import psycopg2 as pg
@@ -32,6 +33,8 @@ SUCCESS_CODE = 201
 ######################################################################################
 
 # Token Interceptor
+
+
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -48,6 +51,8 @@ def auth_user(func):
     return decorated
 
 # Database Connection Establishment
+
+
 def create_connection():
     return pg.connect(user=auth.db_username,
                       password=auth.db_password,
@@ -177,6 +182,7 @@ def create_user():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify({"id": str(rows[0][0])})
 
+
 @app.route("/user/inbox", methods=['PUT'])
 @auth_user
 def list_user_inbox():
@@ -189,7 +195,7 @@ def list_user_inbox():
                FROM inbox_messages, notification
                WHERE inbox_messages.notification_id = notification.id and inbox_messages.person_id = %s;
                 """
-    values = [author] #BUG using to list to hotfix this
+    values = [author]  # BUG using to list to hotfix this
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
@@ -207,16 +213,19 @@ def list_user_inbox():
 ##############################    AUCTION OPERATIONS    ##############################
 ######################################################################################
 
+
 @app.route("/auction", methods=['POST'])
 @auth_user
 def create_auction():
     logger.info("Creating an auction!")
 
+    args = {"item", "min_price", "end_date", "title",
+            "auction_description", "item_description"}
     content = request.get_json()
     token = jwt.decode(content["token"], app.config['SECRET_KEY'])
 
     logger.info(f'Request Content: {content}')
-    if not {"item", "min_price", "end_date", "title", "description"}.issubset(content):
+    if not args.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
     # SQL queries
@@ -229,15 +238,14 @@ def create_auction():
 
     auction_add_info_stmt = """
             INSERT INTO information 
-            (title, description, auction_id)
+            (title, item_description, auction_description, auction_id, time_date)
             VALUES 
-            (%s, %s, %s);
+            (%s, %s, %s, %s, TIMESTAMP %s);
             """
 
     get_auction_id_stmt = """
-                SELECT id
+                SELECT MAX(id)
                 FROM auction
-                WHERE item = %s;
                 """
     try:
         with create_connection() as conn:
@@ -246,18 +254,21 @@ def create_auction():
                 auction_values = [content["item"], content["min_price"],
                                   content["end_date"], token["person_id"]]
                 cursor.execute(auction_create_stmt, auction_values)
+                logger.info(f"Auction Properties Inserted: {auction_values}")
 
                 # Query ID of the inserted auction
-                cursor.execute(get_auction_id_stmt, [content["item"]])
+                cursor.execute(get_auction_id_stmt)
                 id = cursor.fetchone()[0]
+                logger.info(f"Created Auction ID: {id}")
 
                 # Add information to the newly created auction
-                info_values = [content["title"], content["description"],
-                               id, datetime.utcnow()]
+                info_values = [content["title"], content["item_description"],
+                               content["auction_description"], id, datetime.utcnow()]
                 cursor.execute(auction_add_info_stmt, info_values)
+                logger.info(f" Auction Information Inserted: {info_values}")
         conn.close()
     except (Exception, pg.DatabaseError) as error:
-        logger.error("There was an error : %s", error)
+        logger.error(error)
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     return jsonify({"id": id})
@@ -267,12 +278,16 @@ def create_auction():
 @app.route("/auctions", methods=['GET'])
 @auth_user
 def list_auctions():
+    logger.info("Listing auctions!")
+
+    # SQL queries
     auction_list_stmt = """
-                        SELECT id, end_date
-                        FROM auction;
+                        SELECT id
+                        FROM auction
+                        WHERE end_date > TIMESTAMP %s;
                         """
     auction_description_stmt = """
-                            SELECT description
+                            SELECT auction_description
                             FROM information
                             WHERE auction_id = %s
                             """
@@ -280,15 +295,20 @@ def list_auctions():
         with create_connection() as conn:
             auctions = []
             with conn.cursor() as cursor:
-                current_datetime = datetime.utcnow()
-                cursor.execute(auction_list_stmt)
-                for id, end_date in cursor.fetchall():
-                    if end_date > current_datetime:
-                        cursor.execute(auction_description_stmt, [id])
-                        description = cursor.fetchone()[0]
-                        auctions.append(
-                            {"auctionID": id, "description": description}
-                        )
+                # Get current time and fetch all running auctions IDs
+                current_time = str(datetime.utcnow())
+                cursor.execute(auction_list_stmt, [current_time])
+
+                # Fetch auction description for each given ID
+                for id in cursor.fetchall():
+                    cursor.execute(auction_description_stmt, id)
+                    description = cursor.fetchone()
+
+                    # Append Auction to the response
+                    auctions.append({
+                        "id": id[0],
+                        "description": description[0]
+                    })
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
@@ -297,9 +317,19 @@ def list_auctions():
     return jsonify(auctions)
 
 
+@app.route("/auction/<filter>", methods=["GET"])
+def search_auctions(filter):
+
+    get_auctions_by_id_stmt = """
+                SELECT *
+                FROM auction
+                WHERE id = %s OR 
+    """
+    pass
+
 
 def write_msg_core(auctionID, author, message):
-# We could verify is auction exists in the database before running this command
+    # We could verify is auction exists in the database before running this command
     write_msg_stmt = """
                INSERT INTO message (person_id, auction_id, content, time_date)
                VALUES (%s, %s, %s , TIMESTAMP %s)
@@ -356,7 +386,7 @@ def list_msg(auctionID):
                 rows = cursor.fetchall()
                 logger.info(
                     "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
-        conn.close()      
+        conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
@@ -368,7 +398,7 @@ def list_msg(auctionID):
 ######################################################################################
 
 def cancel_auction_core(auction_id):
-    
+
     # SQL queries
     cancel_auction_stmt = """
                         UPDATE auction 
@@ -412,14 +442,15 @@ def cancel_auction_core(auction_id):
             logger.info("Creating notifications")
 
             # Create Notification for bidders
-            cursor.execute(put_notification_stmt, ["The auction was cancelled by the application administrator", datetime.utcnow()])
+            cursor.execute(put_notification_stmt, [
+                           "The auction was cancelled by the application administrator", datetime.utcnow()])
             # Get bidder's notification ID
             cursor.execute(get_notification_id_stmt)
             bidders_notification_id = cursor.fetchall()[0][0]
 
             # Create Notification for creator
             cursor.execute(put_notification_stmt, [
-            "Your auction was cancelled by the application administrator", datetime.utcnow()])
+                "Your auction was cancelled by the application administrator", datetime.utcnow()])
             # Get creator's notification ID
             cursor.execute(get_notification_id_stmt)
             creator_notification_id = cursor.fetchall()[0][0]
@@ -427,17 +458,18 @@ def cancel_auction_core(auction_id):
             # Get Creator ID
             cursor.execute(get_creator_id_stmt, [auction_id])
             creator_id = cursor.fetchall()[0][0]
-            
+
             # Get auction-related users IDS
             logger.info("Notifying users")
             cursor.execute(get_auction_people_ids_stmt, [auction_id])
             people_ids = cursor.fetchall()
 
             # Notify all auction-related users
-            cursor.execute(associate_notification_stmt,[creator_notification_id, creator_id])
+            cursor.execute(associate_notification_stmt, [
+                           creator_notification_id, creator_id])
             for entry in people_ids:
                 cursor.execute(associate_notification_stmt,
-                            [bidders_notification_id, entry[0]])
+                               [bidders_notification_id, entry[0]])
     conn.close()
 
 # Cancel auction Endpoint
@@ -487,7 +519,7 @@ def ban_user():
     decoded_token = jwt.decode(content['token'], app.config['SECRET_KEY'])
     if(not decoded_token['is_admin']):
         return jsonify({"error": "The user does not have admin privileges", "code": FORBIDDEN_CODE})
-    
+
     # SQL queries
     ban_user_stmt = """
                     UPDATE person
@@ -498,7 +530,7 @@ def ban_user():
                                         SELECT id
                                         FROM auction
                                         WHERE person_id = %s;
-                                        """ 
+                                        """
 
     update_user_licitations_stmt = """
                                 UPDATE licitation
@@ -545,14 +577,16 @@ def ban_user():
                 cursor.execute(ban_user_stmt, [content['id']])
 
                 # Get user created auctions IDS
-                cursor.execute(get_user_created_auctions_ids_stmt, [content['id']])
+                cursor.execute(
+                    get_user_created_auctions_ids_stmt, [content['id']])
                 auctions_ids = cursor.fetchall()
 
                 for entry in auctions_ids:
                     # Cancel Auctions and notify Related users
-                    cancel_auction_core(entry[0]) 
+                    cancel_auction_core(entry[0])
                     # Create Message on Auction's mural
-                    write_msg_core(entry[0], ADMIN_ID, "We're sorry to inform that this auction has been cancelled.")
+                    write_msg_core(
+                        entry[0], ADMIN_ID, "We're sorry to inform that this auction has been cancelled.")
 
                 logger.info("Invalidating User Licitations")
                 # Invalidate User licitations
@@ -565,10 +599,12 @@ def ban_user():
                 logger.info("Updating Bidded Prices")
                 for auction_id, min_user_bid, max_valid_bid in info:
                     # All licitations above the minimum banned user licitation price are cancelled, except the maximum valid licitation
-                    cursor.execute(update_licitations_price_stmt, [auction_id, min_user_bid, max_valid_bid])
-                    
+                    cursor.execute(update_licitations_price_stmt, [
+                                   auction_id, min_user_bid, max_valid_bid])
+
                     # All licitations maximum price are updated to minimum banned user licitation price
-                    cursor.execute(update_max_stmt, [min_user_bid, max_valid_bid])
+                    cursor.execute(update_max_stmt, [
+                                   min_user_bid, max_valid_bid])
 
         conn.close()
     except (Exception, pg.DatabaseError) as error:

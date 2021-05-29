@@ -18,7 +18,7 @@ CREATE TABLE licitation (
 
 CREATE TABLE auction (
 	id	 BIGSERIAL,
-	item	 BIGINT UNIQUE NOT NULL,
+	item	 BIGINT NOT NULL,
 	min_price FLOAT(8) NOT NULL DEFAULT 0,
 	end_date	 TIMESTAMP NOT NULL,
 	cancelled BOOL NOT NULL DEFAULT false,
@@ -48,7 +48,8 @@ CREATE TABLE message (
 CREATE TABLE information (
 	reference	 BIGSERIAL,
 	title	 VARCHAR(512) NOT NULL,
-	description VARCHAR(512) NOT NULL,
+	item_description VARCHAR(512) NOT NULL,
+	auction_description VARCHAR(512) NOT NULL,
 	time_date	 TIMESTAMP NOT NULL,
 	auction_id	 BIGINT NOT NULL,
 	PRIMARY KEY(reference)
