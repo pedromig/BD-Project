@@ -115,7 +115,7 @@ def login():
 @app.route("/users", methods=['GET'])
 def print_users():
     get_people_stmt = """
-                    SELECT id, username, password, email, banned 
+                    SELECT id, username, password, email, banned
                     FROM person;
                     """
     try:
@@ -141,7 +141,7 @@ def create_user():
     logger.info(f'Request Content: {content}')
 
     put_person_stmt = """
-                INSERT INTO person 
+                INSERT INTO person
                 (username, password, email)
                 VALUES
                 (%s, %s, %s);
@@ -154,8 +154,8 @@ def create_user():
 
     put_user_stmt = """
                     INSERT INTO users
-                    (person_id) 
-                    VALUES 
+                    (person_id)
+                    VALUES
                     (%s);
                     """
 
@@ -191,7 +191,7 @@ def list_user_inbox():
     decoded = jwt.decode(token, app.config['SECRET_KEY'])
     author = decoded['person_id']
     list_user_inbox_stmt = """
-               SELECT * 
+               SELECT *
                FROM inbox_messages, notification
                WHERE inbox_messages.notification_id = notification.id and inbox_messages.person_id = %s;
                 """
@@ -230,17 +230,17 @@ def create_auction():
 
     # SQL queries
     auction_create_stmt = """
-            INSERT INTO auction 
+            INSERT INTO auction
             (item, min_price, end_date, person_id)
-            VALUES 
+            VALUES
             (%s, %s, TIMESTAMP %s, %s);
             """
 
     auction_add_info_stmt = """
-            INSERT INTO information 
-            (title, item_description, auction_description, auction_id, time_date)
-            VALUES 
-            (%s, %s, %s, %s, TIMESTAMP %s);
+            INSERT INTO information
+            (title, item_description, auction_description, auction_id)
+            VALUES
+            (%s, %s, %s, %s);
             """
 
     get_auction_id_stmt = """
@@ -263,9 +263,10 @@ def create_auction():
 
                 # Add information to the newly created auction
                 info_values = [content["title"], content["item_description"],
-                               content["auction_description"], id, datetime.utcnow()]
+                               content["auction_description"], id]
                 cursor.execute(auction_add_info_stmt, info_values)
                 logger.info(f" Auction Information Inserted: {info_values}")
+
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error(error)
@@ -274,41 +275,54 @@ def create_auction():
     return jsonify({"id": id})
 
 
+# Fetch auction description for each given ID
+def auction_list_response_builder(rows):
+    auctions = []
+    for id, description in rows:
+        # Append Auction to the response
+        logger.info(
+            f"""Adding auction to the response (id: {id}, description: {description})""")
+        auctions.append({
+            "id": id,
+            "description": description
+        })
+    return auctions
+
+
 # Auction Listing Endpoint
 @app.route("/auctions", methods=['GET'])
 @auth_user
 def list_auctions():
     logger.info("Listing auctions!")
 
-    # SQL queries
-    auction_list_stmt = """
-                        SELECT id
+    # SQL query
+    running_auction_list_stmt = """
+                        SELECT id,
+                            auction_description
                         FROM auction
-                        WHERE end_date > TIMESTAMP %s;
+                            JOIN (
+                                SELECT auction_id,
+                                    auction_description
+                                FROM information
+                                    JOIN (
+                                        SELECT MAX(reference) as ref,
+                                            auction_id as aid
+                                        FROM information
+                                        GROUP BY aid
+                                    ) AS ref_id ON reference = ref_id.ref
+                            ) AS info ON id = info.auction_id
+                        WHERE end_date > TIMESTAMP %s
                         """
-    auction_description_stmt = """
-                            SELECT auction_description
-                            FROM information
-                            WHERE auction_id = %s
-                            """
     try:
         with create_connection() as conn:
-            auctions = []
             with conn.cursor() as cursor:
                 # Get current time and fetch all running auctions IDs
                 current_time = str(datetime.utcnow())
-                cursor.execute(auction_list_stmt, [current_time])
+                cursor.execute(running_auction_list_stmt, [current_time])
+                logger.info(f"Successfully fetched running auctions!")
 
-                # Fetch auction description for each given ID
-                for id in cursor.fetchall():
-                    cursor.execute(auction_description_stmt, id)
-                    description = cursor.fetchone()
+                auctions = auction_list_response_builder(cursor.fetchall())
 
-                    # Append Auction to the response
-                    auctions.append({
-                        "id": id[0],
-                        "description": description[0]
-                    })
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
@@ -318,14 +332,55 @@ def list_auctions():
 
 
 @app.route("/auction/<filter>", methods=["GET"])
-def search_auctions(filter):
+@auth_user
+def search_auctions(filter: str):
+    logger.info("Searching auctions!")
 
-    get_auctions_by_id_stmt = """
-                SELECT *
+    # Select SQL search query accourding to filter type
+    id_filter_stmt = ""
+    if filter.isdigit():
+        id_filter_stmt = f"item = {filter} OR"
+
+    # SQL query
+    auction_search_stmt = """
+                SELECT id,
+                    auction_description
                 FROM auction
-                WHERE id = %s OR 
-    """
-    pass
+                    JOIN (
+                        SELECT auction_id,
+                            auction_description
+                        FROM information
+                            JOIN (
+                                SELECT MAX(reference) as ref,
+                                    auction_id as aid
+                                FROM information
+                                GROUP BY aid
+                            ) AS ref_id ON reference = ref_id.ref
+                    ) AS info ON id = info.auction_id
+                WHERE end_date > TIMESTAMP %s
+                    AND {} auction_description LIKE %s;                    
+                """.format(id_filter_stmt)
+
+    logger.info(auction_search_stmt)
+    try:
+        with create_connection() as conn:
+            auctions = []
+            with conn.cursor() as cursor:
+                # Get current time and fetch all running auctions IDs
+                current_time = str(datetime.utcnow())
+                cursor.execute(auction_search_stmt, [
+                               current_time, f"%{filter}%"])
+                logger.info(
+                    f"Successfully filtered and fetched running auctions!")
+
+                auctions = auction_list_response_builder(cursor.fetchall())
+
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify(auctions)
 
 
 def write_msg_core(auctionID, author, message):
