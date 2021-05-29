@@ -49,29 +49,45 @@ VALUES (
         'Solumn Dolorem',
         1,
         TIMESTAMP '2021-01-23 01:23:45'
-    ),
-    (
-        'Ipsium',
-        'daniel',
+    ), (
+        'Lorem Ipsium2',
+        'Damn daniel2',
+        'Solumn Dolorem2',
+        1,
+        TIMESTAMP '2021-01-23 01:23:45'
+    ), (
+        'Lorem Ipsium',
+        'Damn daniel',
         'Solumn Dolorem',
         2,
-        TIMESTAMP '2021-01-23 01:23:45'
-    ),
-    (
-        'Lorem',
-        'Damn',
+        TIMESTAMP '2021-05-23 01:23:45'
+    ), (
+        'Lorem Ipsium2',
+        'Damn daniel2',
+        'Solumn Dolorem2',
+        2,
+        TIMESTAMP '2021-05-23 01:23:45'
+    ), (
+        'Lorem Ipsium',
+        'Damn daniel',
         'Solumn Dolorem',
         3,
-        TIMESTAMP '2021-01-23 01:23:45'
+        TIMESTAMP '2021-05-23 01:23:45'
+    ), (
+        'Lorem Ipsium2',
+        'Damn daniel2',
+        'Solumn Dolorem2',
+        3,
+        TIMESTAMP '2021-05-23 01:23:45'
     );
 -- Licitations
 INSERT INTO licitation (price, auction_id, person_id)
 VALUES (100, 1, 2),
     (101, 1, 2),
-    (102, 1, 3),
+    (102, 1, 2),
     (200, 2, 2),
     (201, 2, 3),
-    (202, 2, 3),
-    (300, 3, 3),
+    (202, 2, 2),
+    (300, 3, 2),
     (301, 3, 2),
     (302, 3, 3);
