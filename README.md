@@ -730,13 +730,14 @@ TODO
 
 **URL** : `/auction/<auctionID>/mural`\
 **Description**: The auction's mural on which is to be written comments, questions and clarifications regarding the auction.
-**Method** : `PUT`\
+**Method** : `POST`\
 **Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
 - message
+- token
 
 ##### Success Response
 
@@ -791,7 +792,7 @@ TODO
 ##### Curl Query Example
 
 ```bash
-curl -X PUT http://localhost:8080/2/mural \
+curl -X POST http://localhost:8080/2/mural \
      -H "Content-Type: application/json" \
      -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjkgMjM6MTg6MDYuNjUzNDgyIn0.spzn96OlSMxaVanRD-WmhX2OYkLqOxoiDgYzueE7cVU", "message": "One ring to rule them all"}'
 
@@ -801,13 +802,13 @@ curl -X PUT http://localhost:8080/2/mural \
 
 **URL** : `/auction/<auctionID>/mural`\
 **Description**: Lists all Messages in the message board.
-**Method** : `GET`\
+**Method** : `PUT`\
 **Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
-`None`
+- token
 
 ##### Success Response
 

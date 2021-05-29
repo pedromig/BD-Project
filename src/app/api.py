@@ -179,6 +179,31 @@ def create_user():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify({"id": str(rows[0][0])})
 
+@app.route("/user/inbox", methods=['PUT'])
+@auth_user
+def list_user_inbox():
+    content = request.get_json()
+    token = content["token"]
+    decoded = jwt.decode(token, app.config['SECRET_KEY'])
+    author = decoded['person_id']
+    list_user_inbox_stmt = """
+               SELECT * 
+               FROM inbox_messages, notification
+               WHERE inbox_messages.notification_id = notification.id and inbox_messages.person_id = %s;
+                """
+    values = [author] #BUG using to list to hotfix this
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(list_user_inbox_stmt, values)
+                rows = cursor.fetchall()
+                logger.info(
+                    "Successfully fetched %d rows from user %s Notification Board ", len(rows), author)
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+    return jsonify(rows)
 
 ######################################################################################
 ##############################    AUCTION OPERATIONS    ##############################
@@ -266,12 +291,33 @@ def list_auctions():
             return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
 
+
+def write_msg_core(auctionID, author, message):
+# We could verify is auction exists in the database before running this command
+    write_msg_stmt = """
+               INSERT INTO message (person_id, auction_id, content, time_date)
+               VALUES (%s, %s, %s , TIMESTAMP %s)
+                """
+    tmstp = datetime.utcnow()  # just because this is used in the logger later
+    values = (author, auctionID, message, str(tmstp))
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(write_msg_stmt, values)
+                logger.info(
+                    "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message, author, str(tmstp))
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+
+    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
+
 # Inserting a message into the mural
-@app.route("/<auctionID>/mural", methods=['PUT'])
+@app.route("/<auctionID>/mural", methods=['POST'])
 @auth_user
 def write_msg(auctionID):
     content = request.get_json()
-
     if not {"message"}.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
@@ -285,33 +331,11 @@ def write_msg(auctionID):
     except Exception as error:
         return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
 
-    # We could verify is auction exists in the database before running this command
-
-    write_msg_stmt = """
-               INSERT INTO message 
-               (person_id, auction_id, content, time_date)
-               VALUES 
-               (%s, %s, %s , TIMESTAMP %s)
-                """
-    tmstp = datetime.utcnow()  # just because this is used in the logger later
-    values = (author, auctionID, message, str(tmstp))
-    try:
-        with create_connection() as conn:
-            with conn.cursor() as cursor:
-                # Put Person in person table
-                cursor.execute(write_msg_stmt, values)
-
-                logger.info(
-                    "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message, author, str(tmstp))
-        conn.close()
-    except (Exception, pg.DatabaseError) as error:
-        logger.error("There was an error : %s", error)
-        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
+    return write_msg_core(auctionID, author, message)
 
 # List all messages in message board
-@app.route("/<auctionID>/mural", methods=['GET'])
-# @auth_user Use this later? -> yes please
+@app.route("/<auctionID>/mural", methods=['PUT'])
+@auth_user
 def list_msg(auctionID):
     list_msg_stmt = """
                SELECT * 
@@ -326,11 +350,12 @@ def list_msg(auctionID):
                 rows = cursor.fetchall()
                 logger.info(
                     "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
-        conn.close()
+        conn.close()      
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify(rows)
+
 
 ######################################################################################
 ###############################    ADMIN OPERATIONS    ###############################
