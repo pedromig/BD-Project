@@ -241,55 +241,55 @@ def list_auctions():
             logger.error("There was an error : %s", error)
             return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
-#Inserting a message into the mural
+# Inserting a message into the mural
 @app.route("/<auctionID>/mural", methods=['PUT'])
 @auth_user
 def write_msg(auctionID):
-        content = request.get_json()
-        conn = create_connection()
-        cursor = conn.cursor()
-        if not {"message"}.issubset(content):
-            return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
-            
-        token = content["token"]
-        decoded = jwt.decode(token, app.config['SECRET_KEY'])
-        author = decoded['person_id']
-        message = content['message']
+    content = request.get_json()
+    conn = create_connection()
+    cursor = conn.cursor()
+    if not {"message"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
-        try:
-            int(auctionID)
-        except Exception as error:
-            return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
+    token = content["token"]
+    decoded = jwt.decode(token, app.config['SECRET_KEY'])
+    author = decoded['person_id']
+    message = content['message']
 
-        #We could verify is auction exists in the database before running this command
-            
-        write_msg_stmt = """
+    try:
+        int(auctionID)
+    except Exception as error:
+        return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
+
+    # We could verify is auction exists in the database before running this command
+
+    write_msg_stmt = """
                INSERT INTO message (person_id, auction_id, content, time_date)
                VALUES (%s, %s, %s , TIMESTAMP %s)
                 """
-        tmstp = datetime.utcnow() #just because this is used in the logger later
-        values = (author, auctionID, message, str(tmstp))
-        try:
-            # Put Person in person table
-            cursor.execute(write_msg_stmt, values)
+    tmstp = datetime.utcnow()  # just because this is used in the logger later
+    values = (author, auctionID, message, str(tmstp))
+    try:
+        # Put Person in person table
+        cursor.execute(write_msg_stmt, values)
 
-            # Make Changes Permanent
-            conn.commit()
+        # Make Changes Permanent
+        conn.commit()
 
-            logger.info(
-                "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message,author,str(tmstp))
-            return jsonify({"response" : "Successful", "code" : SUCCESS_CODE})
+        logger.info(
+            "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message, author, str(tmstp))
+        return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
-        except (Exception, pg.DatabaseError) as error:
-            logger.error("There was an error : %s", error)
-            return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-        finally:
-            if conn is not None:
-                conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+    finally:
+        if conn is not None:
+            conn.close()
 
-#List all messages in message board
+# List all messages in message board
 @app.route("/<auctionID>/mural", methods=['GET'])
-#@auth_user Use this later?
+# @auth_user Use this later?
 def list_msg(auctionID):
     conn = create_connection()
     cursor = conn.cursor()
@@ -302,7 +302,7 @@ def list_msg(auctionID):
             cursor.execute(list_msg_stmt, values)
             rows = cursor.fetchall()
             logger.info(
-                "Sucessfully fetched %d rows from Message Board from auction %s",len(rows), auctionID)
+                "Sucessfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
             return jsonify(rows)
 
     except (Exception, pg.DatabaseError) as error:
@@ -313,6 +313,8 @@ def list_msg(auctionID):
             conn.close()
 
 # Database Connection Establishment
+
+
 def create_connection():
     return pg.connect(user=auth.db_username,
                       password=auth.db_password,
