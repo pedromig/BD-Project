@@ -49,6 +49,20 @@ VALUES (
         'Solumn Dolorem',
         1,
         TIMESTAMP '2021-01-23 01:23:45'
+    ),
+    (
+        'Ipsium',
+        'daniel',
+        'Solumn Dolorem',
+        2,
+        TIMESTAMP '2021-01-23 01:23:45'
+    ),
+    (
+        'Lorem',
+        'Damn',
+        'Solumn Dolorem',
+        3,
+        TIMESTAMP '2021-01-23 01:23:45'
     );
 -- Licitations
 INSERT INTO licitation (price, auction_id, person_id)
