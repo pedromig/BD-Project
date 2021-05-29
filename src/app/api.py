@@ -31,8 +31,7 @@ def auth_user(func):
             token = request.get_json()["token"]
             if not token:
                 return jsonify({'error': 'Token is missing!', 'code': UNAUTHORIZED_CODE})
-
-            logger.debug(token)
+            logger.info(f'Token Content, {token}')
             jwt.decode(token, app.config['SECRET_KEY'])
         except Exception as e:
             logger.debug(e)
@@ -46,7 +45,7 @@ def auth_user(func):
 # Root Endpoint
 @app.route('/')
 def hello():
-    return "Well, the description has was too big, but it is working test"
+    return "Well, the description has was too big, but it is working"
 
 
 # Login Endpoint
@@ -92,7 +91,7 @@ def login():
             conn.close()
 
 # User Listing Endpoint
-@app.route("/user", methods=['GET'])
+@app.route("/users", methods=['GET'])
 def print_users():
     try:
         conn = create_connection()
@@ -150,7 +149,6 @@ def create_user():
 
         # Make Changes Permanent
         conn.commit()
-
         logger.info(
             "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
         return jsonify({"id": str(rows[0][0])})
@@ -166,18 +164,24 @@ def create_user():
 @app.route("/auction", methods=['POST'])
 @auth_user
 def create_auction():
-    logger.info("Creating an auction")
+    logger.info("Creating an auction!")
 
     content = request.get_json()
-    if not {"item", "min_price", "end_date", "person_id"}.issubset(content):
-        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+    token = jwt.decode(content["token"], app.config['SECRET_KEY'])
 
     logger.info(f'Request Content: {content}')
+    if not {"item", "min_price", "end_date", "title", "description"}.issubset(content):
+        return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
-    # SQL queries
+    # SQL queriesd
     auction_create_stmt = """
             INSERT INTO auction (item, min_price, end_date, person_id)
             VALUES (%s, %s, TIMESTAMP %s, %s);
+            """
+
+    auction_add_info_stmt = """
+            INSERT INTO information (title, description, auction_id)
+            VALUES (%s, %s, %s);
             """
 
     get_auction_id_stmt = """
@@ -185,38 +189,44 @@ def create_auction():
                 FROM auction
                 WHERE item = %s;
                 """
-
-    with create_connection() as conn:
-        try:
-            # Create a view over the database
+    try:
+        with create_connection() as conn:
             with conn.cursor() as cursor:
                 # Insert auction into the database
-                values = [content["item"], content["min_price"],
-                          content["end_date"], content["person_id"]]
-                cursor.execute(auction_create_stmt, values)
+                auction_values = [content["item"], content["min_price"],
+                                  content["end_date"], token["person_id"]]
+                cursor.execute(auction_create_stmt, auction_values)
 
                 # Query ID of the inserted auction
-                cursor.execute(get_auction_id_stmt, [values[0]])
-                rows = cursor.fetchall()
+                cursor.execute(get_auction_id_stmt, [content["item"]])
+                id = cursor.fetchone()[0]
 
-                # Make Changes Permanent
-                conn.commit()
-                return jsonify({"id": str(rows[0][0])})
+                # Add information to the newly created auction
+                info_values = [content["title"], content["description"], id]
+                cursor.execute(auction_add_info_stmt, info_values)
+        conn.close()
 
-        except (Exception, pg.DatabaseError) as error:
-            logger.error("There was an error : %s", error)
-            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify({"id": id})
 
 
 # Auction Listing Endpoint
 # TODO: I am not finished yet
-@app.route("/auction", methods=['GET'])
+@app.route("/auctions", methods=['GET'])
 def list_auctions():
 
-    auction_list_stmt = """
-                SELECT id, item, min_price, end_date, cancelled, person_id
-                FROM auction;
-                """
+    auction_list_stmt = """ 
+                        SELECT id 
+                        FROM auction;
+                        """
+    auction_description_stmt = """
+                            SELECT description 
+                            FROM auction
+                            WHERE auction_id = %s
+                            """
 
     with create_connection() as conn:
         try:
@@ -245,24 +255,24 @@ if __name__ == "__main__":
         description="DB-Project Auction REST API - Flask Web Server"
     )
     parser.add_argument("-u", "--db-username", type=str,
-                        help="the database username")
+                        help="the database username",
+                        default="admin")
 
     parser.add_argument("-p", "--db-password", type=str,
-                        help="the user password")
+                        help="the user password",
+                        default="admin")
 
     parser.add_argument("-D", "--db-database", type=str,
-                        help="the database to connect to")
+                        help="the database to connect to",
+                        default="dbauction")
 
     parser.add_argument("-P", "--db-port", type=int,
-                        help="the port where the DBMS is running")
+                        help="the port where the DBMS is running",
+                        default="5432")
 
     parser.add_argument("-H", "--db-hostname", type=str,
-                        help="the hostname where the DBMS is running")
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        parser.exit()
-
+                        help="the hostname where the DBMS is running",
+                        default="localhost")
     auth = parser.parse_args()
 
     # Set up the logging
