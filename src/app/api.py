@@ -15,6 +15,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
 auth = None
 
+ADMIN_ID = 1
+
 '''     Codes      '''
 SUCCESS_CODE = 201
 
@@ -98,7 +100,7 @@ def login():
                 rows = cursor.fetchall()
                 token = jwt.encode({
                     'person_id': rows[0][0],
-                    'is_admin': True if rows[0][0] == 1 else False,
+                    'is_admin': True if rows[0][0] == ADMIN_ID else False,
                     'expiration': str(datetime.utcnow() + timedelta(hours=24))
                 }, app.config['SECRET_KEY'])
                 logger.info(token)
@@ -421,7 +423,7 @@ def cancel_auction_core(auction_id):
 
             # Create Notification for creator
             cursor.execute(put_notification_stmt, [
-            "Your auction was cancelled by the application administrator", datetime.uctnow()])
+            "Your auction was cancelled by the application administrator", datetime.utcnow()])
             # Get creator's notification ID
             cursor.execute(get_notification_id_stmt)
             creator_notification_id = cursor.fetchall()[0][0]
@@ -550,9 +552,11 @@ def ban_user():
                 cursor.execute(get_user_created_auctions_ids_stmt, [content['id']])
                 auctions_ids = cursor.fetchall()
 
-                # Cancel Auctions and notify Related users
                 for entry in auctions_ids:
+                    # Cancel Auctions and notify Related users
                     cancel_auction_core(entry[0]) 
+                    # Create Message on Auction's mural
+                    write_msg_core(entry[0], ADMIN_ID, "We're sorry to inform that this auction has been cancelled.")
 
                 logger.info("Invalidating User Licitations")
                 # Invalidate User licitations
@@ -569,7 +573,7 @@ def ban_user():
                     
                     # All licitations maximum price are updated to minimum banned user licitation price
                     cursor.execute(update_max_stmt, [min_user_bid, max_valid_bid])
-                
+
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
