@@ -78,9 +78,6 @@ def login():
     logger.info("Authenticating a user")
     content = request.get_json()
 
-    conn = create_connection()
-    cursor = conn.cursor()
-
     if "username" not in content or "password" not in content:
         return jsonify({"code": BAD_REQUEST_CODE, "error": "Invalid Parameters in call"})
 
@@ -95,40 +92,38 @@ def login():
     values = [content["username"], content["password"]]
 
     try:
-        cursor.execute(get_person_id_stmt, values)
-        rows = cursor.fetchall()
-        token = jwt.encode({
-            'person_id': rows[0][0],
-            # This is a bad bad security flaw, should be fixed in the future and the is_admin is hardcoded
-            'is_admin': True if rows[0][0] == 1 else False,
-            # Defaulting for a 24 hr token
-            'expiration': str(datetime.utcnow() + timedelta(hours=24))
-        }, app.config['SECRET_KEY'])
-        logger.info(token)
-        return {'token': token.decode('utf-8')}
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(get_person_id_stmt, values)
+                rows = cursor.fetchall()
+                token = jwt.encode({
+                    'person_id': rows[0][0],
+                    'is_admin': True if rows[0][0] == 1 else False,
+                    'expiration': str(datetime.utcnow() + timedelta(hours=24))
+                }, app.config['SECRET_KEY'])
+                logger.info(token)
+        conn.close()
     except (Exception, pg.DatabaseError) as error:
-        logger.error("Request not found in person table")
         logger.error(error)
         return jsonify({"code": NOT_FOUND_CODE, "error": "User not Found"})
-    finally:
-        if conn is not None:
-            conn.close()
+    return {'token': token.decode('utf-8')}
 
 # User Listing Endpoint
 @app.route("/users", methods=['GET'])
 def print_users():
+    get_people_stmt = """
+                    SELECT id, username, password, email, banned 
+                    FROM person;
+                    """
     try:
-        conn = create_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, username, password, email, banned FROM person;")
-        rows = cursor.fetchall()
-        return jsonify({"users": rows})
-    except:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(get_people_stmt)
+                rows = cursor.fetchall()
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": "Could not fetch users data"})
-    finally:
-        if conn is not None:
-            conn.close()
+    return jsonify({"users": rows})
 
 # Sign up Endpoint
 @app.route("/user", methods=['POST'])
@@ -136,8 +131,6 @@ def create_user():
     logger.info("Signing up a User")
 
     content = request.get_json()
-    conn = create_connection()
-    cursor = conn.cursor()
 
     if "username" not in content or "password" not in content or "email" not in content:
         return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
@@ -145,8 +138,8 @@ def create_user():
     logger.info(f'Request Content: {content}')
 
     put_person_stmt = """
-                INSERT INTO
-                person (username, password, email)
+                INSERT INTO person 
+                (username, password, email)
                 VALUES
                 (%s, %s, %s);
                 """
@@ -156,33 +149,35 @@ def create_user():
                 WHERE username = %s;
                 """
 
-    put_user_stmt = " INSERT INTO users(person_id) VALUES (%s);"
+    put_user_stmt = """
+                    INSERT INTO users
+                    (person_id) 
+                    VALUES 
+                    (%s);
+                    """
 
     values = [content["username"], content["password"], content["email"]]
 
     try:
-        # Put Person in person table
-        cursor.execute(put_person_stmt, values)
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                # Put Person in person table
+                cursor.execute(put_person_stmt, values)
 
-        # Get system-assigned personID
-        cursor.execute(get_person_id_stmt, [values[0]])
-        rows = cursor.fetchall()
+                # Get system-assigned personID
+                cursor.execute(get_person_id_stmt, [values[0]])
+                rows = cursor.fetchall()
 
-        # Put User in users table
-        cursor.execute(put_user_stmt, [rows[0][0]])
+                # Put User in users table
+                cursor.execute(put_user_stmt, [rows[0][0]])
 
-        # Make Changes Permanent
-        conn.commit()
-        logger.info(
-            "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
-        return jsonify({"id": str(rows[0][0])})
-
+                logger.info(
+                    "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
+        conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    finally:
-        if conn is not None:
-            conn.close()
+    return jsonify({"id": str(rows[0][0])})
 
 
 ######################################################################################
@@ -203,13 +198,17 @@ def create_auction():
 
     # SQL queriesd
     auction_create_stmt = """
-            INSERT INTO auction (item, min_price, end_date, person_id)
-            VALUES (%s, %s, TIMESTAMP %s, %s);
+            INSERT INTO auction 
+            (item, min_price, end_date, person_id)
+            VALUES 
+            (%s, %s, TIMESTAMP %s, %s);
             """
 
     auction_add_info_stmt = """
-            INSERT INTO information (title, description, auction_id)
-            VALUES (%s, %s, %s);
+            INSERT INTO information 
+            (title, description, auction_id)
+            VALUES 
+            (%s, %s, %s);
             """
 
     get_auction_id_stmt = """
@@ -272,8 +271,7 @@ def list_auctions():
 @auth_user
 def write_msg(auctionID):
     content = request.get_json()
-    conn = create_connection()
-    cursor = conn.cursor()
+
     if not {"message"}.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
@@ -290,53 +288,49 @@ def write_msg(auctionID):
     # We could verify is auction exists in the database before running this command
 
     write_msg_stmt = """
-               INSERT INTO message (person_id, auction_id, content, time_date)
-               VALUES (%s, %s, %s , TIMESTAMP %s)
+               INSERT INTO message 
+               (person_id, auction_id, content, time_date)
+               VALUES 
+               (%s, %s, %s , TIMESTAMP %s)
                 """
     tmstp = datetime.utcnow()  # just because this is used in the logger later
     values = (author, auctionID, message, str(tmstp))
     try:
-        # Put Person in person table
-        cursor.execute(write_msg_stmt, values)
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                # Put Person in person table
+                cursor.execute(write_msg_stmt, values)
 
-        # Make Changes Permanent
-        conn.commit()
-
-        logger.info(
-            "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message, author, str(tmstp))
-        return jsonify({"response": "Successful", "code": SUCCESS_CODE})
-
+                logger.info(
+                    "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message, author, str(tmstp))
+        conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    finally:
-        if conn is not None:
-            conn.close()
+    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 # List all messages in message board
 @app.route("/<auctionID>/mural", methods=['GET'])
-# @auth_user Use this later?
+# @auth_user Use this later? -> yes please
 def list_msg(auctionID):
-    conn = create_connection()
-    cursor = conn.cursor()
     list_msg_stmt = """
-               SELECT * from message where auction_id = %s
+               SELECT * 
+               FROM message 
+               WHERE auction_id = %s;
                 """
     values = (auctionID)
     try:
-        with conn.cursor() as cursor:
-            cursor.execute(list_msg_stmt, values)
-            rows = cursor.fetchall()
-            logger.info(
-                "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
-            return jsonify(rows)
-
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(list_msg_stmt, values)
+                rows = cursor.fetchall()
+                logger.info(
+                    "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
+        conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    finally:
-        if conn is not None:
-            conn.close()
+    return jsonify(rows)
 
 ######################################################################################
 ###############################    ADMIN OPERATIONS    ###############################
@@ -373,12 +367,25 @@ def cancel_auction():
                             FROM licitation 
                             WHERE auction_id = %s;
                             """
-    put_notification_stmt = "INSERT INTO notification(content, time_date) VALUES (%s, %s);"
-    get_notification_id_stmt = "SELECT MAX(id) FROM notification;"
-    associate_notification_stmt = "INSERT INTO inbox_messages(notification_id, person_id) VALUES (%s, %s);"
+    put_notification_stmt = """
+                        INSERT INTO notification
+                        (content, time_date)
+                        VALUES
+                        (%s, %s);
+                        """
+    get_notification_id_stmt = """
+                            SELECT MAX(id)
+                            FROM notification;
+                            """
+    associate_notification_stmt = """
+                            INSERT INTO inbox_messages
+                            (notification_id, person_id)
+                            VALUES 
+                            (%s, %s);
+                            """
 
-    with create_connection() as conn:
-        try:
+    try:
+        with create_connection() as conn:
             # Create a view over the database
             with conn.cursor() as cursor:
                 # Cancel Auction
@@ -387,7 +394,7 @@ def cancel_auction():
                 # Create Notification
                 logger.info("Creating notification")
                 cursor.execute(put_notification_stmt, [
-                               "The auction was cancelled by the application administrator", datetime.now()])
+                            "The auction was cancelled by the application administrator", datetime.now()])
 
                 # Get notification ID
                 cursor.execute(get_notification_id_stmt)
@@ -400,18 +407,15 @@ def cancel_auction():
 
                 for entry in people_ids:
                     cursor.execute(associate_notification_stmt,
-                                   [notification_id, entry[0]])
+                                [notification_id, entry[0]])
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+    # Return response
+    logger.info("Auction cancel operation successful")
+    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
-                # Make Changes Permanent
-                conn.commit()
-
-                # return response
-                logger.info("Auction cancel operation successful")
-                return jsonify({"response": "Successful", "code": SUCCESS_CODE})
-
-        except (Exception, pg.DatabaseError) as error:
-            logger.error("There was an error : %s", error)
-            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
 # Ban User Endpoint
 @app.route("/admin/ban", methods=['POST'])
@@ -427,7 +431,7 @@ def statistics():
 
 
 ########################################################################################
-##################################### MAIN #############################################
+#################################     MAIN     #########################################
 ########################################################################################
 
 if __name__ == "__main__":
