@@ -21,6 +21,7 @@ UNAUTHORIZED_CODE = 401
 FORBIDDEN_CODE = 403
 NOT_FOUND_CODE = 404
 INTERNAL_SERVER_CODE = 500
+SUCCESS_CODE = 201
 
 # Token Interceptor
 
@@ -267,7 +268,7 @@ def write_msg(auctionID):
 
             logger.info(
                 "Inserted Message successfully into election's %s Mural , Content : %s, Author : %s , TimeStamp: %s", auctionID, message,author,str(tmstp))
-            return jsonify({"response" : "Successful", "code" : 200})
+            return jsonify({"response" : "Successful", "code" : SUCCESS_CODE})
 
         except (Exception, pg.DatabaseError) as error:
             logger.error("There was an error : %s", error)
@@ -276,6 +277,7 @@ def write_msg(auctionID):
             if conn is not None:
                 conn.close()
 
+#List all messages in message board
 @app.route("/<auctionID>/mural", methods=['GET'])
 #@auth_user Use this later?
 def list_msg(auctionID):
