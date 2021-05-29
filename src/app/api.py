@@ -671,14 +671,27 @@ def statistics():
         """
 
     get_total_auction_n_last_10_days_stmt = """
-        
+        SELECT COUNT(time_date)
+        FROM information
+        WHERE (auction_id, reference) IN (
+            SELECT auction_id, MIN(reference)
+            FROM information
+            GROUP BY auction_id
+        )  AND time_date > %s - INTERVAL '10' DAY ;
     """
     
     try:
         with create_connection() as conn:
             # Create a view over the database
             with conn.cursor() as cursor:
-                pass
+                cursor.execute(get_top_10_users_with_more_auctions_created_stmt)
+                more_auctions_created = cursor.fetchall()
+
+                cursor.execute(get_top_10_winners_stmt,[datetime.utcnow()])
+                winners = cursor.fetchall()
+
+                cursor.execute(get_total_auction_n_last_10_days_stmt, [datetime.utcnow()])
+                total_10_days = cursor.fetchall()[0][0]
 
         conn.close()
     except (Exception, pg.DatabaseError) as error:
@@ -686,7 +699,13 @@ def statistics():
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     logger.info("Statistics operation successful")
-    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
+    return jsonify(
+        {
+            "more_auctions_created": [{"person_id": person_id, "created": counter } for person_id, counter in more_auctions_created],
+            "winners": [{"person_id": person_id, "won": won} for person_id, won in winners],
+            "total_created_auctions_last_10_days": total_10_days
+        }
+    )
 
 ########################################################################################
 #################################     MAIN     #########################################
