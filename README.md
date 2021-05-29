@@ -56,6 +56,7 @@ database through an SQL interface.
       - [User Inbox](#user-inbox)
       - [User Licitation](#user-licitation)
       - [User Message Posting](#user-message-posting)
+      - [User Message Listing](#user-message-listing)
       - [User Auction Editing](#user-auction-editing)
     - [Auction Endpoints](#auction-endpoints)
       - [Auction Creation](#auction-creation)
@@ -735,36 +736,115 @@ TODO
 
 ##### Request Parameters
 
-`TODO`
+- message
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : 200 \
+**Content** : String saying Success
 
 ```json
-TODO
+{
+  "code": 200, 
+  "response": "Successful"
+}
+
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Non-int auctionID\
+**Code** : 404\
+**Content** : String message response with error
 
 ```json
- TODO
+{
+  "code": 404, 
+  "error": "Invalid auctionID"
+}TODO
 ```
 
 **or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**Condition** : Int-valid but non-existant auction or internal server error\
+**Code** : 500\
+**Content** : Error message
+
+```json
+{
+  "code": 500, 
+  "error": "Error message"
+}
+```
+
+**or**\
+**Condition** : Missing parameters\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Invalid Parameters in call",
+  "code": 400
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X PUT http://localhost:8080/2/mural \
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjkgMjM6MTg6MDYuNjUzNDgyIn0.spzn96OlSMxaVanRD-WmhX2OYkLqOxoiDgYzueE7cVU", "message": "One ring to rule them all"}'
+
+
+```
+#### User Message Listing
+
+**URL** : `/auction/<auctionID>/mural`\
+**Description**: Lists all Messages in the message board.
+**Method** : `GET`\
+**Authentication required** : `YES`\
+**Permissions required** : `None`
+
+##### Request Parameters
+
+`None`
+
+##### Success Response
+
+**Code** : `TODO` \
+**Content** : List of all messages in the message board
+
+```json
+[
+  [
+    1, 
+    "Here is a message to this mural", 
+    "Fri, 28 May 2021 23:24:09 GMT", 
+    3, 
+    2
+  ]
+]
+
 ```
 
+##### Error Responses
+
+**Condition** : Int-valid but non-existant auction or internal server error\
+**Code** : 500\
+**Content** : Error message
+
+```json
+{
+  "code": 500, 
+  "error": "Error message"
+}
+```
+
+##### Curl Query Example
+
+```bash
+  curl -X GET http://localhost:8080/2/mural  
+```
 #### User Auction Editing
 
 **URL** : `/auction/<auctionID>`\
