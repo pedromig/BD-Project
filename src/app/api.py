@@ -201,15 +201,15 @@ def create_auction():
     if not {"item", "min_price", "end_date", "title", "description"}.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
-    # SQL queriesd
+    # SQL queries
     auction_create_stmt = """
             INSERT INTO auction (item, min_price, end_date, person_id)
             VALUES (%s, %s, TIMESTAMP %s, %s);
             """
 
     auction_add_info_stmt = """
-            INSERT INTO information (title, description, auction_id)
-            VALUES (%s, %s, %s);
+            INSERT INTO information (title, description, auction_id, time_date)
+            VALUES (%s, %s, %s, TIMESTAMP %s);
             """
 
     get_auction_id_stmt = """
@@ -230,41 +230,49 @@ def create_auction():
                 id = cursor.fetchone()[0]
 
                 # Add information to the newly created auction
-                info_values = [content["title"], content["description"], id]
+                info_values = [content["title"], content["description"],
+                               id, datetime.utcnow()]
                 cursor.execute(auction_add_info_stmt, info_values)
         conn.close()
-
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     return jsonify({"id": id})
 
-# Auction Listing Endpoint
-# TODO: I am not finished yet
-@app.route("/auctions", methods=['GET'])
-def list_auctions():
 
-    auction_list_stmt = """ 
-                        SELECT id 
+# Auction Listing Endpoint
+@app.route("/auctions", methods=['GET'])
+@auth_user
+def list_auctions():
+    auction_list_stmt = """
+                        SELECT id, end_date
                         FROM auction;
                         """
     auction_description_stmt = """
-                            SELECT description 
-                            FROM auction
+                            SELECT description
+                            FROM information
                             WHERE auction_id = %s
                             """
-
-    with create_connection() as conn:
-        try:
+    try:
+        with create_connection() as conn:
+            auctions = []
             with conn.cursor() as cursor:
+                current_datetime = datetime.utcnow()
                 cursor.execute(auction_list_stmt)
-                rows = cursor.fetchall()
-                return jsonify(rows)
+                for id, end_date in cursor.fetchall():
+                    if end_date > current_datetime:
+                        cursor.execute(auction_description_stmt, [id])
+                        description = cursor.fetchone()[0]
+                        auctions.append(
+                            {"auctionID": id, "description": description}
+                        )
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
-        except (Exception, pg.DatabaseError) as error:
-            logger.error("There was an error : %s", error)
-            return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+    return jsonify(auctions)
 
 
 # Inserting a message into the mural
@@ -387,7 +395,7 @@ def cancel_auction():
                 # Create Notification
                 logger.info("Creating notification")
                 cursor.execute(put_notification_stmt, [
-                               "The auction was cancelled by the application administrator", datetime.now()])
+                               "The auction was cancelled by the application administrator", datetime.utcnow()])
 
                 # Get notification ID
                 cursor.execute(get_notification_id_stmt)
