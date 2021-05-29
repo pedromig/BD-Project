@@ -36,11 +36,12 @@ VALUES (12344, 32.3, TIMESTAMP '2021-06-12 04:05:06', 2),
     (420, 4.20, TIMESTAMP '2021-04-20 04:20:00', 2),
     (123, 123.4, TIMESTAMP '2021-01-23 01:23:45', 3);
 -- Information --
-INSERT INTO information (title, description, auction_id)
+INSERT INTO information (title, description, auction_id, time_date)
 VALUES (
         'Lorem Ipsium',
         'Solumn Dolorem',
-        1
+        1,
+        TIMESTAMP '2021-01-23 01:23:45'
     );
 -- Licitations
 INSERT INTO licitation (price, auction_id, person_id) 

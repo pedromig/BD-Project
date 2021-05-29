@@ -14,7 +14,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
 auth = None
 
-'''     Error   Codes      '''
+'''     Codes      '''
+SUCCESS_CODE = 201
+
 BAD_REQUEST_CODE = 400
 UNAUTHORIZED_CODE = 401
 FORBIDDEN_CODE = 403
@@ -279,9 +281,14 @@ def cancel_auction():
                         WHERE id = %s;
                         """
 
-    get_auction_licitations = """
-                            SELECT DISTINCT 
+    get_auction_people_ids_stmt = """
+                            SELECT DISTINCT person_id 
+                            FROM licitation 
+                            WHERE auction_id = %s;
                             """
+    put_notification_stmt = "INSERT INTO notification(content, time_date) VALUES (%s, %s);"
+    get_notification_id_stmt = "SELECT MAX(id) FROM notification;"
+    associate_notification_stmt = "INSERT INTO inbox_messages(notification_id, person_id) VALUES (%s, %s);"
 
     with create_connection() as conn:
         try:
@@ -290,11 +297,28 @@ def cancel_auction():
                 # Cancel Auction
                 cursor.execute(cancel_auction_stmt, [content["id"]])
 
+                # Create Notification
+                logger.info("Creating notification")
+                cursor.execute(put_notification_stmt,["The auction was cancelled by the application administrator", datetime.now()])
+
+                # Get notification ID
+                cursor.execute(get_notification_id_stmt)
+                notification_id = cursor.fetchall()[0][0]
+
                 # Notify all auction-related users
+                logger.info("Notifying users")
+                cursor.execute(get_auction_people_ids_stmt, [content["id"]])
+                people_ids = cursor.fetchall()
+
+                for entry in people_ids:
+                    cursor.execute(associate_notification_stmt, [notification_id, entry[0]])
 
                 # Make Changes Permanent
                 conn.commit()
-                return 
+
+                # return response
+                logger.info("Auction cancel operation successful")
+                return jsonify({"response" : "Successful", "code" : SUCCESS_CODE})
 
         except (Exception, pg.DatabaseError) as error:
             logger.error("There was an error : %s", error)
@@ -321,23 +345,24 @@ if __name__ == "__main__":
         description="DB-Project Auction REST API - Flask Web Server"
     )
     parser.add_argument("-u", "--db-username", type=str,
-                        help="the database username")
+                        help="the database username",
+                        default="admin")
 
     parser.add_argument("-p", "--db-password", type=str,
-                        help="the user password")
+                        help="the user password",
+                        default="admin")
 
     parser.add_argument("-D", "--db-database", type=str,
-                        help="the database to connect to")
+                        help="the database to connect to",
+                        default="dbauction")
 
     parser.add_argument("-P", "--db-port", type=int,
-                        help="the port where the DBMS is running")
+                        help="the port where the DBMS is running",
+                        default="5432")
 
     parser.add_argument("-H", "--db-hostname", type=str,
-                        help="the hostname where the DBMS is running")
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        parser.exit()
+                        help="the hostname where the DBMS is running",
+                        default="localhost")
 
     auth = parser.parse_args()
 

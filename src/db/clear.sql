@@ -3,7 +3,7 @@ DROP TABLE administrator;
 DROP TABLE licitation;
 DROP TABLE message;
 DROP TABLE information;
-DROP TABLE notification_person;
+DROP TABLE inbox_messages;
 DROP TABLE notification;
 DROP TABLE auction;
 DROP TABLE person;
