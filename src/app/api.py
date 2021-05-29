@@ -30,8 +30,6 @@ SUCCESS_CODE = 201
 ######################################################################################
 
 # Token Interceptor
-
-
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -48,8 +46,6 @@ def auth_user(func):
     return decorated
 
 # Database Connection Establishment
-
-
 def create_connection():
     return pg.connect(user=auth.db_username,
                       password=auth.db_password,
@@ -274,6 +270,7 @@ def list_auctions():
     return jsonify(auctions)
 
 
+
 # Inserting a message into the mural
 @app.route("/<auctionID>/mural", methods=['PUT'])
 @auth_user
@@ -415,7 +412,7 @@ def cancel_auction():
 
                 for entry in people_ids:
                     cursor.execute(associate_notification_stmt,
-                                [notification_id, entry[0]])
+                                   [notification_id, entry[0]])
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
