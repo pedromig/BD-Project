@@ -233,11 +233,65 @@ def list_user_inbox():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify(rows)
 
+# Fetch auction description for each given ID
+
+
+def auction_list_response_builder(rows):
+    auctions = []
+    for id, description in rows:
+        # Append Auction to the response
+        logger.info(
+            f"""Adding auction to the response (id: {id}, description: {description})""")
+        auctions.append({
+            "id": id,
+            "description": description
+        })
+    return auctions
+
 
 @app.route("/user/activity", methods=["GET"])
 @auth_user
-def user_activity(filter: str):
-    pass
+def user_activity():
+    content = request.get_json()
+    token = jwt.decode(content["token"], app.config['SECRET_KEY'])
+
+    # SQL query
+    user_activity_stmt = """
+        SELECT DISTINCT auction.id,
+            auction_description
+        FROM auction,
+            licitation
+            JOIN (
+                SELECT auction_id,
+                    auction_description
+                FROM information
+                    JOIN (
+                        SELECT MAX(reference) as ref,
+                            auction_id as aid
+                        FROM information
+                        GROUP BY aid
+                    ) AS ref_id ON reference = ref_id.ref
+            ) AS info ON id = info.auction_id
+        WHERE auction.person_id = %s
+            OR licitation.person_id = %s;
+    """
+
+    logger.info("Making the database query...")
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                # Get user activity
+                cursor.execute(user_activity_stmt, [token["person_id"]] * 2)
+                logger.info(f"Successfully fetched user activity!")
+
+                auctions = auction_list_response_builder(cursor.fetchall())
+
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify(auctions)
 
 
 ######################################################################################
@@ -305,20 +359,6 @@ def create_auction():
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     return jsonify({"id": id})
-
-
-# Fetch auction description for each given ID
-def auction_list_response_builder(rows):
-    auctions = []
-    for id, description in rows:
-        # Append Auction to the response
-        logger.info(
-            f"""Adding auction to the response (id: {id}, description: {description})""")
-        auctions.append({
-            "id": id,
-            "description": description
-        })
-    return auctions
 
 
 # Auction Listing Endpoint
