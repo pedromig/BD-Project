@@ -433,7 +433,8 @@ Here is a list of docker commands that might be useful
 ## Project features
 
 ### REST API specification
-
+---
+---
 ### User endpoints
 
 ---
@@ -643,7 +644,7 @@ TODO
 ```bash
 TODO
 ```
-
+---
 #### User Inbox
 
 **URL** : `/user/inbox`\
@@ -683,7 +684,7 @@ TODO
 ```bash
 TODO
 ```
-
+---
 #### User Licitation
 
 **URL** : `/licitation/<auctionID>/<value>`\
@@ -726,6 +727,7 @@ TODO
 TODO
 ```
 
+---
 #### User Message Posting
 
 **URL** : `/auction/<auctionID>/mural`\
@@ -798,6 +800,7 @@ curl -X POST http://localhost:8080/2/mural \
 
 
 ```
+---
 #### User Message Listing
 
 **URL** : `/auction/<auctionID>/mural`\
@@ -846,6 +849,7 @@ curl -X POST http://localhost:8080/2/mural \
 ```bash
   curl -X GET http://localhost:8080/2/mural  
 ```
+---
 #### User Auction Editing
 
 **URL** : `/auction/<auctionID>`\
@@ -886,9 +890,10 @@ TODO
 ```bash
 TODO
 ```
-
+---
+---
 ### Auction Endpoints
-
+---
 #### Auction Creation
 
 **URL** : `/auction`\
@@ -928,7 +933,7 @@ TODO
 ```bash
 TODO
 ```
-
+---
 #### Auction Listing
 
 **URL** : `/auction`\
@@ -968,7 +973,7 @@ TODO
 ```bash
 TODO
 ```
-
+---
 #### Auction Searching
 
 **URL** : `/auction/<filter>`\
@@ -1009,7 +1014,7 @@ TODO
 ```bash
 TODO
 ```
-
+---
 #### Auction Details
 
 **URL** : `/auction/<auctionID>`\
@@ -1104,7 +1109,7 @@ curl -X POST http://localhost:8080/admin/ban \
 ---
 #### Auction Cancellation
 
-**URL** : `/auction/<auctionID>`\
+**URL** : `/admin/cancel`\
 **Description**:
 Cancel an auction. The auction can still be viewed by users, but is declared closed and no bids can be placed. All interested users receive a notification.\
 **Method** : `POST`\
@@ -1112,161 +1117,113 @@ Cancel an auction. The auction can still be viewed by users, but is declared clo
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
-
-`TODO`
+- Administrator Login Token
+- Auction ID
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `201 CREATED`\
+**Content** : A json with the following structure
 
 ```json
-TODO
+{
+  "code": 200,
+  "response": "Successful"
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : An internal Server Error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "error": " ***Error Details*** ",
+  "code": 500
+}
 ```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X POST http://localhost:8080/admin/cancel \
+     -H "Content-Type: application/json" \
+     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
+    }'
 ```
+---
+#### Application Statistics
 
-### Application Statistics
-
-An administrator must be able to view statistics of the application's usage.
-
-#### Users With Most Auctions
 
 **URL** : `/statistics/users`\
-**Description**: Top 10 users with the most auctions created.\
+**Description**: 
+- Top 10 users with the most auctions created.
+- Total number of created auctions in the last 10 days.
+- Top 10 users who won the most auctions.
+
 **Method** : `GET`\
 **Authentication required** : `YES`\
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
-
-`TODO`
+- Administrator Login Token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `201 CREATED`\
+**Content** : A json with the following format
 
 ```json
-TODO
+{
+    "more_auctions_created": [
+        {
+            "created": 2,
+            "person_id": 2
+        },
+        {
+            "created": 1,
+            "person_id": 3
+        }
+    ],
+    "total_created_auctions_last_10_days": 2,
+    "winners": [
+        {
+            "person_id": 2,
+            "won": 1
+        },
+        {
+            "person_id": 3,
+            "won": 1
+        }
+    ]
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : An internal Server Error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "error": " ***Error Details*** ",
+  "code": 500
+}
 ```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X GET http://localhost:5000/admin/stats \
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
+    }'
 ```
-
-#### User Auction Winners
-
-**URL** : `/statistics/winners`\
-**Description**: Top 10 users who won the most auctions.\
-**Method** : `GET`\
-**Authentication required** : `YES`\
-**Permissions required** : `Administrator Privileges`
-
-##### Request Parameters
-
-`TODO`
-
-##### Success Response
-
-**Code** : `TODO`\
-**Content** : `TODO`
-
-```json
-TODO
-```
-
-##### Error Responses
-
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
-
-```json
- TODO
-```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
-
-##### Curl Query Example
-
-```bash
-TODO
-```
-
-#### Auctions
-
-**URL** : `/statistics/auctions`\
-**Description**: Total number of auctions in the last 10 days.\
-**Method** : `GET`\
-**Authentication required** : `YES`\
-**Permissions required** : `Administrator Privileges`
-
-##### Request Parameters
-
-`TODO`
-
-##### Success Response
-
-**Code** : `TODO`\
-**Content** : `TODO`
-
-```json
-TODO
-```
-
-##### Error Responses
-
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
-
-```json
- TODO
-```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
-
-##### Curl Query Example
-
-```bash
-TODO
-```
-
+---
+---
 ## Collaborators
 
 - [Miguel Rabuge](https://github.com/MikeLrUC)
