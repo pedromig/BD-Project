@@ -34,7 +34,7 @@ INTERNAL_SERVER_CODE = 500
 
 
 # Logging formater
-class APILogFormater(logging.Formatter):
+class APILogFormatter(logging.Formatter):
 
     RED = "\x1B[31m"
     GREEN = "\x1B[32m"
@@ -277,6 +277,8 @@ def create_auction():
                 SELECT MAX(id)
                 FROM auction
                 """
+
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
@@ -343,6 +345,8 @@ def list_auctions():
                             ) AS info ON id = info.auction_id
                         WHERE end_date > TIMESTAMP %s
                         """
+
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
@@ -361,7 +365,7 @@ def list_auctions():
     return jsonify(auctions)
 
 
-@app.route("/auction/<filter>", methods=["GET"])
+@app.route("/auctions/<filter>", methods=["GET"])
 @auth_user
 def search_auctions(filter: str):
     logger.info("Searching auctions!")
@@ -388,9 +392,10 @@ def search_auctions(filter: str):
                             ) AS ref_id ON reference = ref_id.ref
                     ) AS info ON id = info.auction_id
                 WHERE end_date > TIMESTAMP %s
-                    AND {} auction_description LIKE %s;                    
+                    AND {} auction_description LIKE %s;
                 """.format(id_filter_stmt)
 
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             auctions = []
@@ -417,23 +422,132 @@ def search_auctions(filter: str):
 def auction_details(auctionID: str):
     logger.info(f"Details for auction with ID {auctionID}!")
 
+    if not auctionID.isdigit():
+        logger.error("Invalid auction ID!")
+        return jsonify({
+            'error': 'A invalid auction ID was provided',
+            'code': BAD_REQUEST_CODE
+        })
+
+    # SQL queries
     auction_properties_stmt = """
-        SELECT auction_id, person_id, title, 
+        SELECT auction_id, username, title,
             item, item_description, auction_description,
             min_price, end_date, cancelled
         FROM auction
-            JOIN (
-                SELECT *
-                FROM information
-                    JOIN (
-                        SELECT MAX(reference) as ref,
-                            auction_id as aid
-                        FROM information
-                        WHERE auction_id = 2
-                        GROUP BY auction_id
-                    ) AS ref_id ON reference = ref_id.ref
-            ) AS info ON id = info.auction_id;
+        JOIN (
+            SELECT *
+            FROM information
+                JOIN (
+                    SELECT MAX(reference) as ref,
+                        auction_id as aid
+                    FROM information
+                    WHERE auction_id = %s
+                    GROUP BY auction_id
+                ) AS ref_id ON reference = ref_id.ref
+        ) AS info ON id = info.auction_id
+        JOIN (
+            SELECT id,
+                username
+            FROM person
+        ) AS names ON names.id = person_id;
         """
+    auction_message_list_stmt = """
+        SELECT username, content, time_date
+        FROM message
+            JOIN (
+                SELECT id,
+                    username
+                FROM person
+            ) AS names ON names.id = person_id
+        WHERE auction_id = %s
+        ORDER BY time_date ASC;
+    """
+
+    licitation_message_list_stmt = """
+        SELECT username, price
+        FROM licitation
+            JOIN (
+                SELECT id,
+                    username
+                FROM person
+            ) AS names ON names.id = person_id
+        WHERE auction_id = %s
+        ORDER BY price ASC;
+    """
+
+    # Response JSON Keys
+    response_properties_keys = [
+        "id",
+        "creator",
+        "title",
+        "item",
+        "item_description",
+        "auction_description",
+        "opening_price",
+        "end_date",
+        "canceled"
+    ]
+
+    response_message_keys = [
+        "author",
+        "content",
+        "time_date"
+    ]
+
+    response_licitation_keys = [
+        "bidder",
+        "bid"
+    ]
+
+    logger.info("Making the database query...")
+    try:
+        with create_connection() as conn:
+            payload = {}
+            with conn.cursor() as cursor:
+
+                # Auction properties query
+                logger.info("Adding properties to the response payload!")
+                cursor.execute(auction_properties_stmt, [auctionID])
+                rows = cursor.fetchall()
+                logger.debug(rows)
+                # Add auction properties to the payload
+                if len(rows) > 0:
+                    payload.update(
+                        list(zip(response_properties_keys, rows[0]))
+                    )
+
+                # Auction mural messages query
+                logger.info("Adding mural messages to the response payload!")
+                cursor.execute(auction_message_list_stmt, [auctionID])
+                rows = cursor.fetchall()
+
+                # Add auction mural messages to the payload
+                if len(rows) > 0:
+                    payload["messages"] = []
+                    for message in rows:
+                        payload["messages"].append(
+                            dict(zip(response_message_keys, message))
+                        )
+
+                # Auction licitations query
+                logger.info("Adding licitations to the response payload!")
+                cursor.execute(licitation_message_list_stmt, [auctionID])
+                rows = cursor.fetchall()
+
+                # Add auction licitations to the payload
+                if len(rows) > 0:
+                    payload["licitations"] = []
+                    for licitation in rows:
+                        payload["licitations"].append(
+                            dict(zip(response_licitation_keys, licitation))
+                        )
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify(payload)
 
 
 def write_msg_core(auctionID, author, message):
@@ -855,7 +969,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    ch.setFormatter(APILogFormater())
+    ch.setFormatter(APILogFormatter())
     logger.addHandler(ch)
 
     time.sleep(1)
