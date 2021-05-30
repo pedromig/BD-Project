@@ -1049,12 +1049,13 @@ TODO
 ```bash
 TODO
 ```
-
+---
+---
 ### Administrator Endpoints
-
+---
 #### User Ban
 
-**URL** : `/user/{userID}`\
+**URL** : `/admin/ban`\
 **Description**: Ban a user. All auctions created by that
 user are cancelled. All bids placed by that user should be invalidated (even
 yet kept in the logs). When invalidating a bid in an auction, any higher bids
@@ -1064,37 +1065,43 @@ shall also be dropped except for the best one, whose value becomes equal to the 
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
-
-`TODO`
+- Administrator Login Token
+- User ID
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `201 CREATED`\
+**Content** : A json with the following structure
 
 ```json
-TODO
+{
+  "code": 200,
+  "response": "Successful"
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : An internal Server Error\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "error": " ***Error Details*** ",
+  "code": 500
+}
 ```
-
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X POST http://localhost:8080/admin/ban \
+     -H "Content-Type: application/json" \
+     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
+    }'
 ```
-
+---
 #### Auction Cancellation
 
 **URL** : `/auction/<auctionID>`\
