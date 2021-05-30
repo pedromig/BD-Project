@@ -433,8 +433,11 @@ Here is a list of docker commands that might be useful
 ## Project features
 
 ### REST API specification
+
 ---
+
 ---
+
 ### User endpoints
 
 ---
@@ -608,43 +611,73 @@ curl -X GET "http://localhost:8080/users"
 #### User Activity
 
 **URL** : `/user/activity`\
-**Description**: List auctions where a user had any activity, either as creator of the auction or as a bidder. This listing summarizes the details of each auction.\
+**Description**: List auctions where a user had any activity, either as creator of the auction or as a bidder. This listing summarizes the details of each auction (auction id and auction description).\
 **Method** : `GET`\
 **Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
-`TODO`
+- token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Content** :
 
 ```json
-TODO
+[
+  {
+    "description": "Donec quis orci eget orci vehicula condimentum.",
+    "id": 1
+  },
+  {
+    "description": "Nulla ac enim.",
+    "id": 2
+  },
+  {
+    "description": "Vestibulum ac est lacinia nisi venenatis tristique.",
+    "id": 14
+  }
+]
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Missing token parameter\
+**Code** : `401 Unauthorized`\
+**Content** :
 
 ```json
- TODO
+{
+  "code": 401,
+  "error": "Token is missing!"
+}
 ```
 
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**or**
+
+**Condition** : Invalid or malformed token was provided\
+**Code** : `403 Forbidden`\
+**Content** :
+
+```json
+{
+  "code": 403,
+  "error": "Invalid token"
+}
+```
 
 ##### Curl Query Example
 
-```bash
-TODO
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjpmYWxzZ
+  SwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2"
+}
 ```
+
 ---
+
 #### User Inbox
 
 **URL** : `/user/inbox`\
@@ -684,7 +717,9 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 #### User Licitation
 
 **URL** : `/licitation/<auctionID>`\
@@ -703,11 +738,11 @@ to do and is at least higher than the minimum price.\
 ##### Success Response
 
 **Code** : 201\
-**Content** : 
+**Content** :
 
 ```json
-  {
-  "code": 201, 
+{
+  "code": 201,
   "response": "Successful"
 }
 ```
@@ -736,6 +771,7 @@ to do and is at least higher than the minimum price.\
   "code": 400
 }
 ```
+
 **or**\
 **Condition** : Amount Lower Than Allowed\
 **Code** : `400 Bad Request`\
@@ -751,12 +787,13 @@ to do and is at least higher than the minimum price.\
 ##### Curl Query Example
 
 ```bash
-curl -X PUT http://localhost:5000/licitation/5 \ 
+curl -X PUT http://localhost:5000/licitation/5 \
      -H "Content-Type: application/json" \
      -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTI6MTM6MjguNDczNDk0In0.xCSijevh_ytlmhiv7JL1Czmm6KO77u1kihlqsYAP0a0", "price": '252'}'
 ```
 
 ---
+
 #### User Message Posting
 
 **URL** : `/auction/<auctionID>/mural`\
@@ -777,10 +814,9 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 ```json
 {
-  "code": 201, 
+  "code": 201,
   "response": "Successful"
 }
-
 ```
 
 ##### Error Responses
@@ -791,7 +827,7 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 ```json
 {
-  "code": 404, 
+  "code": 404,
   "error": "Invalid auctionID"
 }TODO
 ```
@@ -803,7 +839,7 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 ```json
 {
-  "code": 500, 
+  "code": 500,
   "error": "Error message (dependant on type of internal error)"
 }
 ```
@@ -829,7 +865,9 @@ curl -X POST http://localhost:8080/2/mural \
 
 
 ```
+
 ---
+
 #### User Message Listing
 
 **URL** : `/auction/<auctionID>/mural`\
@@ -848,16 +886,7 @@ curl -X POST http://localhost:8080/2/mural \
 **Content** : List of all messages in the message board
 
 ```json
-[
-  [
-    1, 
-    "Here is a message to this mural", 
-    "Fri, 28 May 2021 23:24:09 GMT", 
-    3, 
-    2
-  ]
-]
-
+[[1, "Here is a message to this mural", "Fri, 28 May 2021 23:24:09 GMT", 3, 2]]
 ```
 
 ##### Error Responses
@@ -868,7 +897,7 @@ curl -X POST http://localhost:8080/2/mural \
 
 ```json
 {
-  "code": 500, 
+  "code": 500,
   "error": "Error message (dependant on the type of the internal error)"
 }
 ```
@@ -876,9 +905,11 @@ curl -X POST http://localhost:8080/2/mural \
 ##### Curl Query Example
 
 ```bash
-  curl -X PUT http://localhost:8080/2/mural  
+  curl -X PUT http://localhost:8080/2/mural
 ```
+
 ---
+
 #### User Auction Editing
 
 **URL** : `/auction/<auctionID>`\
@@ -919,10 +950,15 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 ---
+
 ### Auction Endpoints
+
 ---
+
 #### Auction Creation
 
 **URL** : `/auction`\
@@ -962,7 +998,9 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 #### Auction Listing
 
 **URL** : `/auction`\
@@ -1002,7 +1040,9 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 #### Auction Searching
 
 **URL** : `/auction/<filter>`\
@@ -1043,7 +1083,9 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 #### Auction Details
 
 **URL** : `/auction/<auctionID>`\
@@ -1083,10 +1125,15 @@ TODO
 ```bash
 TODO
 ```
+
 ---
+
 ---
+
 ### Administrator Endpoints
+
 ---
+
 #### User Ban
 
 **URL** : `/admin/ban`\
@@ -1099,6 +1146,7 @@ shall also be dropped except for the best one, whose value becomes equal to the 
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
+
 - Administrator Login Token
 - User ID
 
@@ -1135,7 +1183,9 @@ curl -X POST http://localhost:8080/admin/ban \
      -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
     }'
 ```
+
 ---
+
 #### Auction Cancellation
 
 **URL** : `/admin/cancel`\
@@ -1146,6 +1196,7 @@ Cancel an auction. The auction can still be viewed by users, but is declared clo
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
+
 - Administrator Login Token
 - Auction ID
 
@@ -1182,12 +1233,14 @@ curl -X POST http://localhost:8080/admin/cancel \
      -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
     }'
 ```
+
 ---
+
 #### Application Statistics
 
-
 **URL** : `/statistics/users`\
-**Description**: 
+**Description**:
+
 - Top 10 users with the most auctions created.
 - Total number of created auctions in the last 10 days.
 - Top 10 users who won the most auctions.
@@ -1197,6 +1250,7 @@ curl -X POST http://localhost:8080/admin/cancel \
 **Permissions required** : `Administrator Privileges`
 
 ##### Request Parameters
+
 - Administrator Login Token
 
 ##### Success Response
@@ -1206,27 +1260,27 @@ curl -X POST http://localhost:8080/admin/cancel \
 
 ```json
 {
-    "more_auctions_created": [
-        {
-            "created": 2,
-            "person_id": 2
-        },
-        {
-            "created": 1,
-            "person_id": 3
-        }
-    ],
-    "total_created_auctions_last_10_days": 2,
-    "winners": [
-        {
-            "person_id": 2,
-            "won": 1
-        },
-        {
-            "person_id": 3,
-            "won": 1
-        }
-    ]
+  "more_auctions_created": [
+    {
+      "created": 2,
+      "person_id": 2
+    },
+    {
+      "created": 1,
+      "person_id": 3
+    }
+  ],
+  "total_created_auctions_last_10_days": 2,
+  "winners": [
+    {
+      "person_id": 2,
+      "won": 1
+    },
+    {
+      "person_id": 3,
+      "won": 1
+    }
+  ]
 }
 ```
 
@@ -1251,8 +1305,11 @@ curl -X GET http://localhost:5000/admin/stats \
      -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
     }'
 ```
+
 ---
+
 ---
+
 ## Collaborators
 
 - [Miguel Rabuge](https://github.com/MikeLrUC)

@@ -62,10 +62,12 @@ class APILogFormatter(logging.Formatter):
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
+
+        content = request.get_json()
+        if content is None or "token" not in content or not content["token"]:
+            return jsonify({'error': 'Token is missing!', 'code': UNAUTHORIZED_CODE})
         try:
-            token = request.get_json()["token"]
-            if not token:
-                return jsonify({'error': 'Token is missing!', 'code': UNAUTHORIZED_CODE})
+            token = content["token"]
             logger.info(f'Token Content, {token}')
             jwt.decode(token, app.config['SECRET_KEY'])
         except Exception as e:
@@ -149,6 +151,7 @@ def print_users():
                 rows = cursor.fetchall()
         conn.close()
     except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": "Could not fetch users data"})
     return jsonify({"users": rows})
 
@@ -260,7 +263,7 @@ def user_licitation(auctionID):
                 min_amt = None if rows == [] else rows[0][0]
                 if min_amt == None:
                     return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
-                
+
                 if float(price) <= max(max_bid, min_amt):
                     return jsonify({"error": "Invalid Amount (Lower Than Allowed)", "code": BAD_REQUEST_CODE})
 
@@ -323,10 +326,17 @@ def user_activity():
 
     # SQL query
     user_activity_stmt = """
-        SELECT DISTINCT auction.id,
+        SELECT id,
             auction_description
-        FROM auction,
-            licitation
+        FROM (
+                SELECT id
+                FROM auction
+                WHERE person_id = %s
+                UNION
+                SELECT id
+                FROM licitation
+                WHERE person_id = %s
+            ) AS activity
             JOIN (
                 SELECT auction_id,
                     auction_description
@@ -337,9 +347,7 @@ def user_activity():
                         FROM information
                         GROUP BY aid
                     ) AS ref_id ON reference = ref_id.ref
-            ) AS info ON id = info.auction_id
-        WHERE auction.person_id = %s
-            OR licitation.person_id = %s;
+            ) AS info ON activity.id = info.auction_id;
     """
 
     logger.info("Making the database query...")
