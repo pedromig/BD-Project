@@ -206,6 +206,70 @@ def create_user():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify({"id": str(rows[0][0])})
 
+@app.route("/licitation/<auctionID>", methods=['PUT'])
+@auth_user
+def user_licitation(auctionID): 
+    content = request.get_json()
+
+    if "price" not in content:
+        return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
+
+    token = content["token"]
+    decoded = jwt.decode(token, app.config['SECRET_KEY'])
+    author = decoded['person_id']
+    price = content['price']
+
+    try:
+        int(auctionID)
+        float(price)
+    except Exception as error:
+        return jsonify({"error": "Invalid auctionID or price", "code": BAD_REQUEST_CODE})
+
+    list_max_bid_auction_stmt = """
+                        SELECT MAX(price)
+                        FROM licitation
+                        WHERE auction_id = %s AND valid = %s;
+                         """
+    
+    list_min_price_stmt = """
+               SELECT min_price 
+               FROM auction 
+               WHERE auction.id = %s;
+                """
+    insert_bid_stmt = """
+               INSERT INTO licitation (price, auction_id, person_id) VALUES (%s, %s ,%s)
+                """
+    
+    values_max_bid = (auctionID, "true")
+    values_min_price = (auctionID)
+    values_insert_bid = (price, auctionID, author)
+
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                #stmt 1
+                cursor.execute(list_max_bid_auction_stmt, values_max_bid)
+                rows = cursor.fetchall()
+                max_bid = 0 if rows[0][0] == None else float(rows[0][0])
+
+                #stmt 2
+                cursor.execute(list_min_price_stmt, values_min_price)
+                rows = cursor.fetchall()
+                logger.info(rows)
+                min_amt =  None if rows== [] else rows[0][0]
+                if min_amt == None:
+                    return jsonify({"error": "Invalid auctionID", "code": BAD_REQUEST_CODE})
+                
+                if float(price) <= max(max_bid, min_amt):
+                    return jsonify({"error": "Invalid Amount (Lower Than Allowed)", "code": BAD_REQUEST_CODE})
+                
+                #stmt 3
+                cursor.execute(insert_bid_stmt, values_insert_bid)
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+    return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 @app.route("/user/inbox", methods=['PUT'])
 @auth_user
