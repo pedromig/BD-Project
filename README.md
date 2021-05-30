@@ -686,7 +686,7 @@ TODO
 
 #### User Licitation
 
-**URL** : `/licitation/<auctionID>/<value>`\
+**URL** : `/licitation/<auctionID>`\
 **Description**: A user can bid with a higher price on a particular
 auction, as long as the auction has not ended and there is no higher bid.
 to do and is at least higher than the minimum price.\
@@ -696,34 +696,63 @@ to do and is at least higher than the minimum price.\
 
 ##### Request Parameters
 
-`TODO`
+- token
+- amount
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : 201\
+**Content** : 
 
 ```json
-TODO
+  {
+  "code": 201, 
+  "response": "Successful"
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Missing parameters\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "error": "Invalid Parameters in call",
+  "code": 400
+}
 ```
 
 **or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**Condition** : Invalid parameters (such has non-float amount, non-int auction, not existant auction)\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Invalid Parameters in call",
+  "code": 400
+}
+```
+**or**\
+**Condition** : Amount Lower Than Allowed\
+**Code** : `400 Bad Request`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Invalid Amount (Lower Than Allowed)",
+  "code": 400
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X PUT http://localhost:5000/licitation/5 \ 
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTI6MTM6MjguNDczNDk0In0.xCSijevh_ytlmhiv7JL1Czmm6KO77u1kihlqsYAP0a0", "price": '252'}'
 ```
 
 #### User Message Posting
@@ -741,7 +770,7 @@ TODO
 
 ##### Success Response
 
-**Code** : 200 \
+**Code** : 201 \
 **Content** : String saying Success
 
 ```json
@@ -768,12 +797,12 @@ TODO
 **or**\
 **Condition** : Int-valid but non-existant auction or internal server error\
 **Code** : 500\
-**Content** : Error message
+**Content** :
 
 ```json
 {
   "code": 500, 
-  "error": "Error message"
+  "error": "Error message (dependant on type of internal error)"
 }
 ```
 
@@ -837,14 +866,14 @@ curl -X POST http://localhost:8080/2/mural \
 ```json
 {
   "code": 500, 
-  "error": "Error message"
+  "error": "Error message (dependant on the type of the internal error)"
 }
 ```
 
 ##### Curl Query Example
 
 ```bash
-  curl -X GET http://localhost:8080/2/mural  
+  curl -X PUT http://localhost:8080/2/mural  
 ```
 #### User Auction Editing
 

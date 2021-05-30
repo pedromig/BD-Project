@@ -199,7 +199,7 @@ def user_licitation(auctionID):
         int(auctionID)
         float(price)
     except Exception as error:
-        return jsonify({"error": "Invalid auctionID or price", "code": BAD_REQUEST_CODE})
+        return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
 
     list_max_bid_auction_stmt = """
                         SELECT MAX(price)
@@ -234,7 +234,7 @@ def user_licitation(auctionID):
                 logger.info(rows)
                 min_amt =  None if rows== [] else rows[0][0]
                 if min_amt == None:
-                    return jsonify({"error": "Invalid auctionID", "code": BAD_REQUEST_CODE})
+                    return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
                 
                 if float(price) <= max(max_bid, min_amt):
                     return jsonify({"error": "Invalid Amount (Lower Than Allowed)", "code": BAD_REQUEST_CODE})
@@ -469,7 +469,7 @@ def write_msg_core(auctionID, author, message):
     return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 # Inserting a message into the mural
-@app.route("/<auctionID>/mural", methods=['POST'])
+@app.route("/auction/<auctionID>/mural", methods=['POST'])
 @auth_user
 def write_msg(auctionID):
     content = request.get_json()
@@ -489,7 +489,7 @@ def write_msg(auctionID):
     return write_msg_core(auctionID, author, message)
 
 # List all messages in message board
-@app.route("/<auctionID>/mural", methods=['PUT'])
+@app.route("/auction/<auctionID>/mural", methods=['PUT'])
 @auth_user
 def list_msg(auctionID):
     list_msg_stmt = """
