@@ -49,31 +49,36 @@ VALUES (
         'Solumn Dolorem',
         1,
         TIMESTAMP '2021-01-23 01:23:45'
-    ), (
+    ),
+    (
         'Lorem Ipsium2',
         'Damn daniel2',
         'Solumn Dolorem2',
         1,
         TIMESTAMP '2021-01-23 01:23:45'
-    ), (
+    ),
+    (
         'Lorem Ipsium',
         'Damn daniel',
         'Solumn Dolorem',
         2,
         TIMESTAMP '2021-05-23 01:23:45'
-    ), (
+    ),
+    (
         'Lorem Ipsium2',
         'Damn daniel2',
         'Solumn Dolorem2',
         2,
         TIMESTAMP '2021-05-23 01:23:45'
-    ), (
+    ),
+    (
         'Lorem Ipsium',
         'Damn daniel',
         'Solumn Dolorem',
         3,
         TIMESTAMP '2021-05-23 01:23:45'
-    ), (
+    ),
+    (
         'Lorem Ipsium2',
         'Damn daniel2',
         'Solumn Dolorem2',
@@ -91,3 +96,7 @@ VALUES (100, 1, 2),
     (300, 3, 2),
     (301, 3, 2),
     (302, 3, 3);
+-- Message --
+INSERT INTO message(content, person_id, auction_id)
+VALUES ('Mural Post1', 3, 3),
+    ('Mural Post2', 3, 3);

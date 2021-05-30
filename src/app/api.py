@@ -11,6 +11,7 @@ import sys
 import time
 import argparse
 import jwt
+from werkzeug.wrappers import ResponseStream
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
@@ -26,11 +27,34 @@ UNAUTHORIZED_CODE = 401
 FORBIDDEN_CODE = 403
 NOT_FOUND_CODE = 404
 INTERNAL_SERVER_CODE = 500
-SUCCESS_CODE = 201
 
 ######################################################################################
 #####################################    UTILS    ####################################
 ######################################################################################
+
+
+# Logging formater
+class APILogFormatter(logging.Formatter):
+
+    RED = "\x1B[31m"
+    GREEN = "\x1B[32m"
+    YELLOW = "\x1b[33;21m"
+    RESET = "\x1B[0m"
+    BLUE = "\x1B[34m"
+    FORMAT = "%(asctime)s [%(levelname)s]:  %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: FORMAT,
+        logging.INFO: BLUE + FORMAT + RESET,
+        logging.WARNING: YELLOW + FORMAT + RESET,
+        logging.ERROR: RED + FORMAT + RESET,
+    }
+
+    def format(self, record):
+        fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(fmt, "%H:%M:%S")
+        return formatter.format(record)
+
 
 # Token Interceptor
 
@@ -273,10 +297,70 @@ def list_user_inbox():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify(rows)
 
+# Fetch auction description for each given ID
+
+
+def auction_list_response_builder(rows):
+    auctions = []
+    for id, description in rows:
+        # Append Auction to the response
+        logger.info(
+            f"""Adding auction to the response (id: {id}, description: {description})""")
+        auctions.append({
+            "id": id,
+            "description": description
+        })
+    return auctions
+
+
+@app.route("/user/activity", methods=["GET"])
+@auth_user
+def user_activity():
+    content = request.get_json()
+    token = jwt.decode(content["token"], app.config['SECRET_KEY'])
+
+    # SQL query
+    user_activity_stmt = """
+        SELECT DISTINCT auction.id,
+            auction_description
+        FROM auction,
+            licitation
+            JOIN (
+                SELECT auction_id,
+                    auction_description
+                FROM information
+                    JOIN (
+                        SELECT MAX(reference) as ref,
+                            auction_id as aid
+                        FROM information
+                        GROUP BY aid
+                    ) AS ref_id ON reference = ref_id.ref
+            ) AS info ON id = info.auction_id
+        WHERE auction.person_id = %s
+            OR licitation.person_id = %s;
+    """
+
+    logger.info("Making the database query...")
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                # Get user activity
+                cursor.execute(user_activity_stmt, [token["person_id"]] * 2)
+                logger.info(f"Successfully fetched user activity!")
+
+                auctions = auction_list_response_builder(cursor.fetchall())
+
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify(auctions)
+
+
 ######################################################################################
 ##############################    AUCTION OPERATIONS    ##############################
 ######################################################################################
-
 
 @app.route("/auction", methods=['POST'])
 @auth_user
@@ -311,6 +395,8 @@ def create_auction():
                 SELECT MAX(id)
                 FROM auction
                 """
+
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
@@ -339,20 +425,6 @@ def create_auction():
     return jsonify({"id": id})
 
 
-# Fetch auction description for each given ID
-def auction_list_response_builder(rows):
-    auctions = []
-    for id, description in rows:
-        # Append Auction to the response
-        logger.info(
-            f"""Adding auction to the response (id: {id}, description: {description})""")
-        auctions.append({
-            "id": id,
-            "description": description
-        })
-    return auctions
-
-
 # Auction Listing Endpoint
 @app.route("/auctions", methods=['GET'])
 @auth_user
@@ -377,6 +449,8 @@ def list_auctions():
                             ) AS info ON id = info.auction_id
                         WHERE end_date > TIMESTAMP %s
                         """
+
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
@@ -395,7 +469,7 @@ def list_auctions():
     return jsonify(auctions)
 
 
-@app.route("/auction/<filter>", methods=["GET"])
+@app.route("/auctions/<filter>", methods=["GET"])
 @auth_user
 def search_auctions(filter: str):
     logger.info("Searching auctions!")
@@ -422,10 +496,10 @@ def search_auctions(filter: str):
                             ) AS ref_id ON reference = ref_id.ref
                     ) AS info ON id = info.auction_id
                 WHERE end_date > TIMESTAMP %s
-                    AND {} auction_description LIKE %s;                    
+                    AND {} auction_description LIKE %s;
                 """.format(id_filter_stmt)
 
-    logger.info(auction_search_stmt)
+    logger.info("Making the database query...")
     try:
         with create_connection() as conn:
             auctions = []
@@ -445,6 +519,139 @@ def search_auctions(filter: str):
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     return jsonify(auctions)
+
+
+@app.route("/auction/<auctionID>", methods=["GET"])
+@auth_user
+def auction_details(auctionID: str):
+    logger.info(f"Details for auction with ID {auctionID}!")
+
+    if not auctionID.isdigit():
+        logger.error("Invalid auction ID!")
+        return jsonify({
+            'error': 'A invalid auction ID was provided',
+            'code': BAD_REQUEST_CODE
+        })
+
+    # SQL queries
+    auction_properties_stmt = """
+        SELECT auction_id, username, title,
+            item, item_description, auction_description,
+            min_price, end_date, cancelled
+        FROM auction
+        JOIN (
+            SELECT *
+            FROM information
+                JOIN (
+                    SELECT MAX(reference) as ref,
+                        auction_id as aid
+                    FROM information
+                    WHERE auction_id = %s
+                    GROUP BY auction_id
+                ) AS ref_id ON reference = ref_id.ref
+        ) AS info ON id = info.auction_id
+        JOIN (
+            SELECT id,
+                username
+            FROM person
+        ) AS names ON names.id = person_id;
+        """
+    auction_message_list_stmt = """
+        SELECT username, content, time_date
+        FROM message
+            JOIN (
+                SELECT id,
+                    username
+                FROM person
+            ) AS names ON names.id = person_id
+        WHERE auction_id = %s
+        ORDER BY time_date ASC;
+    """
+
+    licitation_message_list_stmt = """
+        SELECT username, price
+        FROM licitation
+            JOIN (
+                SELECT id,
+                    username
+                FROM person
+            ) AS names ON names.id = person_id
+        WHERE auction_id = %s
+        ORDER BY price ASC;
+    """
+
+    # Response JSON Keys
+    response_properties_keys = [
+        "id",
+        "creator",
+        "title",
+        "item",
+        "item_description",
+        "auction_description",
+        "opening_price",
+        "end_date",
+        "canceled"
+    ]
+
+    response_message_keys = [
+        "author",
+        "content",
+        "time_date"
+    ]
+
+    response_licitation_keys = [
+        "bidder",
+        "bid"
+    ]
+
+    logger.info("Making the database query...")
+    try:
+        with create_connection() as conn:
+            payload = {}
+            with conn.cursor() as cursor:
+
+                # Auction properties query
+                logger.info("Adding properties to the response payload!")
+                cursor.execute(auction_properties_stmt, [auctionID])
+                rows = cursor.fetchall()
+                logger.debug(rows)
+                # Add auction properties to the payload
+                if len(rows) > 0:
+                    payload.update(
+                        list(zip(response_properties_keys, rows[0]))
+                    )
+
+                # Auction mural messages query
+                logger.info("Adding mural messages to the response payload!")
+                cursor.execute(auction_message_list_stmt, [auctionID])
+                rows = cursor.fetchall()
+
+                # Add auction mural messages to the payload
+                if len(rows) > 0:
+                    payload["messages"] = []
+                    for message in rows:
+                        payload["messages"].append(
+                            dict(zip(response_message_keys, message))
+                        )
+
+                # Auction licitations query
+                logger.info("Adding licitations to the response payload!")
+                cursor.execute(licitation_message_list_stmt, [auctionID])
+                rows = cursor.fetchall()
+
+                # Add auction licitations to the payload
+                if len(rows) > 0:
+                    payload["licitations"] = []
+                    for licitation in rows:
+                        payload["licitations"].append(
+                            dict(zip(response_licitation_keys, licitation))
+                        )
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error(error)
+        return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
+
+    return jsonify(payload)
 
 
 def write_msg_core(auctionID, author, message):
@@ -724,7 +931,7 @@ def ban_user():
                     # All licitations maximum price are updated to minimum banned user licitation price if
                     if (min_user_bid < max_valid_bid):
                         cursor.execute(update_max_stmt, [
-                                   min_user_bid, max_valid_bid])
+                            min_user_bid, max_valid_bid])
 
         conn.close()
     except (Exception, pg.DatabaseError) as error:
@@ -798,18 +1005,20 @@ def statistics():
             GROUP BY auction_id
         )  AND time_date > %s - INTERVAL '10' DAY ;
     """
-    
+
     try:
         with create_connection() as conn:
             # Create a view over the database
             with conn.cursor() as cursor:
-                cursor.execute(get_top_10_users_with_more_auctions_created_stmt)
+                cursor.execute(
+                    get_top_10_users_with_more_auctions_created_stmt)
                 more_auctions_created = cursor.fetchall()
 
-                cursor.execute(get_top_10_winners_stmt,[datetime.utcnow()])
+                cursor.execute(get_top_10_winners_stmt, [datetime.utcnow()])
                 winners = cursor.fetchall()
 
-                cursor.execute(get_total_auction_n_last_10_days_stmt, [datetime.utcnow()])
+                cursor.execute(get_total_auction_n_last_10_days_stmt, [
+                               datetime.utcnow()])
                 total_10_days = cursor.fetchall()[0][0]
 
         conn.close()
@@ -820,7 +1029,7 @@ def statistics():
     logger.info("Statistics operation successful")
     return jsonify(
         {
-            "more_auctions_created": [{"person_id": person_id, "created": counter } for person_id, counter in more_auctions_created],
+            "more_auctions_created": [{"person_id": person_id, "created": counter} for person_id, counter in more_auctions_created],
             "winners": [{"person_id": person_id, "won": won} for person_id, won in winners],
             "total_created_auctions_last_10_days": total_10_days
         }
@@ -829,6 +1038,7 @@ def statistics():
 ########################################################################################
 #################################     MAIN     #########################################
 ########################################################################################
+
 
 if __name__ == "__main__":
 
@@ -863,12 +1073,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-
-    # create formatter
-    formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s]:  %(message)s', '%H:%M:%S'
-    )
-    ch.setFormatter(formatter)
+    ch.setFormatter(APILogFormatter())
     logger.addHandler(ch)
 
     time.sleep(1)

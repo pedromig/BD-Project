@@ -144,3 +144,4 @@ local_settings
 # Others
 logs/
 .history/
+db.session.sql
