@@ -17,5 +17,6 @@ ENV POSTGRES_DB dbauction
 
 COPY schema.sql /docker-entrypoint-initdb.d/1-schema.sql
 COPY data.sql /docker-entrypoint-initdb.d/2-data.sql
+COPY triggers.sql /docker-entrypoint-initdb.d/3-triggers.sql
 
 EXPOSE 5432
