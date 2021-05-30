@@ -11,6 +11,7 @@ import sys
 import time
 import argparse
 import jwt
+from werkzeug.wrappers import ResponseStream
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
@@ -31,6 +32,30 @@ SUCCESS_CODE = 201
 ######################################################################################
 #####################################    UTILS    ####################################
 ######################################################################################
+
+
+# Logging formater
+class APILogFormater(logging.Formatter):
+
+    RED = "\x1B[31m"
+    GREEN = "\x1B[32m"
+    YELLOW = "\x1b[33;21m"
+    RESET = "\x1B[0m"
+    BLUE = "\x1B[34m"
+    FORMAT = "%(asctime)s [%(levelname)s]:  %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: FORMAT,
+        logging.INFO: BLUE + FORMAT + RESET,
+        logging.WARNING: YELLOW + FORMAT + RESET,
+        logging.ERROR: RED + FORMAT + RESET,
+    }
+
+    def format(self, record):
+        fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(fmt, "%H:%M:%S")
+        return formatter.format(record)
+
 
 # Token Interceptor
 
@@ -209,10 +234,16 @@ def list_user_inbox():
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify(rows)
 
+
+@app.route("/user/activity", methods=["GET"])
+@auth_user
+def user_activity(filter: str):
+    pass
+
+
 ######################################################################################
 ##############################    AUCTION OPERATIONS    ##############################
 ######################################################################################
-
 
 @app.route("/auction", methods=['POST'])
 @auth_user
@@ -361,7 +392,6 @@ def search_auctions(filter: str):
                     AND {} auction_description LIKE %s;                    
                 """.format(id_filter_stmt)
 
-    logger.info(auction_search_stmt)
     try:
         with create_connection() as conn:
             auctions = []
@@ -381,6 +411,30 @@ def search_auctions(filter: str):
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
     return jsonify(auctions)
+
+
+@app.route("/auction/<auctionID>", methods=["GET"])
+@auth_user
+def auction_details(auctionID: str):
+    logger.info(f"Details for auction with ID {auctionID}!")
+
+    auction_properties_stmt = """
+        SELECT auction_id, person_id, title, 
+            item, item_description, auction_description,
+            min_price, end_date, cancelled
+        FROM auction
+            JOIN (
+                SELECT *
+                FROM information
+                    JOIN (
+                        SELECT MAX(reference) as ref,
+                            auction_id as aid
+                        FROM information
+                        WHERE auction_id = 2
+                        GROUP BY auction_id
+                    ) AS ref_id ON reference = ref_id.ref
+            ) AS info ON id = info.auction_id;
+        """
 
 
 def write_msg_core(auctionID, author, message):
@@ -660,7 +714,7 @@ def ban_user():
                     # All licitations maximum price are updated to minimum banned user licitation price if
                     if (min_user_bid < max_valid_bid):
                         cursor.execute(update_max_stmt, [
-                                   min_user_bid, max_valid_bid])
+                            min_user_bid, max_valid_bid])
 
         conn.close()
     except (Exception, pg.DatabaseError) as error:
@@ -734,18 +788,20 @@ def statistics():
             GROUP BY auction_id
         )  AND time_date > %s - INTERVAL '10' DAY ;
     """
-    
+
     try:
         with create_connection() as conn:
             # Create a view over the database
             with conn.cursor() as cursor:
-                cursor.execute(get_top_10_users_with_more_auctions_created_stmt)
+                cursor.execute(
+                    get_top_10_users_with_more_auctions_created_stmt)
                 more_auctions_created = cursor.fetchall()
 
-                cursor.execute(get_top_10_winners_stmt,[datetime.utcnow()])
+                cursor.execute(get_top_10_winners_stmt, [datetime.utcnow()])
                 winners = cursor.fetchall()
 
-                cursor.execute(get_total_auction_n_last_10_days_stmt, [datetime.utcnow()])
+                cursor.execute(get_total_auction_n_last_10_days_stmt, [
+                               datetime.utcnow()])
                 total_10_days = cursor.fetchall()[0][0]
 
         conn.close()
@@ -756,7 +812,7 @@ def statistics():
     logger.info("Statistics operation successful")
     return jsonify(
         {
-            "more_auctions_created": [{"person_id": person_id, "created": counter } for person_id, counter in more_auctions_created],
+            "more_auctions_created": [{"person_id": person_id, "created": counter} for person_id, counter in more_auctions_created],
             "winners": [{"person_id": person_id, "won": won} for person_id, won in winners],
             "total_created_auctions_last_10_days": total_10_days
         }
@@ -765,6 +821,7 @@ def statistics():
 ########################################################################################
 #################################     MAIN     #########################################
 ########################################################################################
+
 
 if __name__ == "__main__":
 
@@ -799,12 +856,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-
-    # create formatter
-    formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s]:  %(message)s', '%H:%M:%S'
-    )
-    ch.setFormatter(formatter)
+    ch.setFormatter(APILogFormater())
     logger.addHandler(ch)
 
     time.sleep(1)
