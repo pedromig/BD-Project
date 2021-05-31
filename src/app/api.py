@@ -115,7 +115,7 @@ def create_connection():
 # Root Endpoint
 @app.route('/')
 def hello():
-    return "Well, the description has was too big, but it is working"
+    return "Welcome to the BD-Project!!"
 
 
 ######################################################################################
@@ -1277,4 +1277,4 @@ if __name__ == "__main__":
                 "-------- Docker: http://localhost:8080/ ----------\n"
                 "-------- Native: http://localhost:5000/ ----------\n"
                 )
-    app.run(host="0.0.0.0",  debug=True, threaded=True)
+    app.run(host="0.0.0.0",  debug=False, threaded=True)

@@ -86,25 +86,35 @@ database through an SQL interface.
 
 ## Project Structure
 
-```
+```txt
 .
 ├── docs
 │  ├── deliverables
-│  │  └── meta1.zip
-│  └── db_project.pdf
+│  │  ├── meta1.zip
+│  │  └── meta2.zip
+│  ├── onda
+│  │  ├── ERD.json
+│  │  ├── ERD_conceptual.png
+│  │  └── ERD_physical.png
+│  ├── db_project.pdf
+│  └── README.pdf
 ├── scripts
 │  ├── clean.sh
-|  ├── compose.sh
-│  └── compose.yml
+│  ├── compose.sh
+│  ├── compose.yml
+│  └── unittester.py
 ├── src
 │  ├── app
+│  │  ├── logs
+│  │  │  └── log_file.log
 │  │  ├── api.py
 │  │  └── Dockerfile
 │  └── db
+│     ├── clear.sql
 │     ├── data.sql
 │     ├── Dockerfile
-│     └── schema.sql
-├── .gitignore
+│     ├── schema.sql
+│     └── triggers.sql
 ├── LICENSE
 ├── README.md
 └── REQUIREMENTS.txt
@@ -277,7 +287,8 @@ sudo apt-get install \
     gnupg-agent \
     software-properties-common
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+    | sudo apt-key add -
 sudo apt-key fingerprint 0EBFCD88
 
 sudo apt-get update
@@ -424,7 +435,11 @@ Here is a list of docker commands that might be useful
 
 ## Dragon Server
 
-`TODO: Add here information about the interaction with our server i will do this when we complete the project`
+The project will be available in our server. To access the REST API access the following link:
+
+```http
+http://dragonserver.ddns.net:8080/
+```
 
 ## Project features
 
@@ -494,7 +509,8 @@ Here is a list of docker commands that might be useful
 ```bash
 curl -X POST http://localhost:8080/user \
      -H "Content-Type: application/json" \
-     -d '{ "username": "example", "password": "123", "email":"example@gmail.com"}'
+     -d '{ "username": "example", "password": "123",
+     "email":"example@gmail.com"}'
 ```
 
 ---
@@ -520,9 +536,7 @@ curl -X POST http://localhost:8080/user \
 ```json
 {
   "code": 200,
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjQsImlzX2Fk
-  bWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjggMjE6MTE6NDcuNDM3NjgyIn0.Y9_
-  6Z6D4EBgBqj603qQG3UvHHOqxyGtHsL1Pdc1E6uc"
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"
 }
 ```
 
@@ -662,9 +676,7 @@ curl -X PUT http://localhost:8080/user \
 ```bash
 curl -X GET "http://localhost:8080/users" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjp
-     mYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31Va
-     ggJPSDl5YI4sdLl_hDFx2}'
+     -d '{ "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)" }'
 ```
 
 ---
@@ -750,9 +762,7 @@ curl -X GET "http://localhost:8080/users" \
 ```bash
 curl -X GET "http://localhost:8080/user/activity" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjp
-    mYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31Va
-    ggJPSDl5YI4sdLl_hDFx2}'
+     -d '{ "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)" }'
 ```
 
 ---
@@ -841,9 +851,7 @@ curl -X GET "http://localhost:8080/user/activity" \
 ```bash
 curl -X GET "http://localhost:8080/user/inbox" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjp
-    mYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31Va
-    ggJPSDl5YI4sdLl_hDFx2}'
+     -d '{ "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -954,7 +962,7 @@ to do and is at least higher than the minimum price.\
 ```bash
 curl -X PUT http://localhost:8080/licitation/5 \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTI6MTM6MjguNDczNDk0In0.xCSijevh_ytlmhiv7JL1Czmm6KO77u1kihlqsYAP0a0", "price": '252'}'
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)", "price": '252'}'
 ```
 
 ---
@@ -1051,7 +1059,7 @@ curl -X PUT http://localhost:8080/licitation/5 \
 ```bash
 curl -X POST http://localhost:8080/2/mural \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjkgMjM6MTg6MDYuNjUzNDgyIn0.spzn96OlSMxaVanRD-WmhX2OYkLqOxoiDgYzueE7cVU", "message": "One ring to rule them all"}'
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)", "message": "One ring to rule them all"}'
 
 ```
 
@@ -1178,9 +1186,7 @@ curl -X POST http://localhost:8080/2/mural \
 ```bash
 curl -X GET http://localhost:8080/2/mural \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2F
-     kbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMjkgMjM6MTg6MDYuNjUzNDgyIn0.spzn96O
-     lSMxaVanRD-WmhX2OYkLqOxoiDgYzueE7cVU", "message": "One ring to rule them all"}'
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)" }'
 
 ```
 
@@ -1271,7 +1277,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 ```bash
 curl -X PUT http://localhost:8080/auction/2 \
      -H "Content-Type: application/json" \
-     -d '{ "title": "hello", "item_description": "world", "auction_description": "again","token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFxc"}'
+     -d '{ "title": "hello", "item_description": "world", "auction_description": "again", "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1376,7 +1382,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 ```bash
 curl -X POST http://localhost:8080/auction/2 \
      -H "Content-Type: application/json" \
-     -d '{ "item": "1234123", "min_price": "23", "end_date": "2021-10-12 04:05:04", "title": "Items sale", "item_description": "Itemizer", "auction_description": "Many items", "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTM6MjI6MTUuNjM3NDY2In0_myp-9moEvIK-uuc41qTDeiyt3ed7j5BklkT-mPuxYc"}'
+     -d '{ "item": "1234123", "min_price": "23", "end_date": "2021-10-12 04:05:04", "title": "Items sale", "item_description": "Itemizer", "auction_description": "Many items",  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1474,9 +1480,7 @@ curl -X POST http://localhost:8080/auction/2 \
 ```bash
 curl -X GET "http://localhost:8080/auctions" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
-     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
-     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1575,9 +1579,7 @@ that meets the search criteria.\
 ```bash
 curl -X GET "http://localhost:8080/auctions/a" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
-     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
-     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
+     -d '{ "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 
 ```
 
@@ -1661,9 +1663,7 @@ curl -X GET "http://localhost:8080/auctions/a" \
 ```bash
 curl -X GET "http://localhost:8080/auction/123" \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
-     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
-     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1720,8 +1720,7 @@ shall also be dropped except for the best one, whose value becomes equal to the 
 ```bash
 curl -X POST http://localhost:8080/admin/ban \
      -H "Content-Type: application/json" \
-     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
-    }'
+     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1770,8 +1769,7 @@ Cancel an auction. The auction can still be viewed by users, but is declared clo
 ```bash
 curl -X POST http://localhost:8080/admin/cancel \
      -H "Content-Type: application/json" \
-     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
-    }'
+     -d '{"id": 2, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---
@@ -1842,8 +1840,7 @@ curl -X POST http://localhost:8080/admin/cancel \
 ```bash
 curl -X GET http://localhost:5000/admin/stats \
      -H "Content-Type: application/json" \
-     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjEsImlzX2FkbWluIjp0cnVlLCJleHBpcmF0aW9uIjoiMjAyMS0wNS0yOSAyMjozMTo0OC44OTUyNTIifQ.Ag_Ggm4WugJ8zbqmLayVVWPjWg2OyMvxiWdVODVtiWk"
-    }'
+     -d '{ "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 (...)"}'
 ```
 
 ---

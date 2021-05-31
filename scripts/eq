@@ -1,8 +1,0 @@
- id |              content              |           time_date           | person_id | auction_id 
-----+-----------------------------------+-------------------------------+-----------+------------
- 22 | Vivamus tortor.                   | 2021-05-31 13:42:06.631493+00 |        14 |          2
- 23 | Maecenas rhoncus aliquam lacus.   | 2021-05-31 13:42:06.632457+00 |        25 |          2
- 25 | In eleifend quam a odio.          | 2021-05-31 13:42:06.634437+00 |        19 |          2
- 31 | Master Kenoby you are a bold one! | 2021-05-31 13:42:21.782435+00 |         2 |          2
-(4 rows)
-
