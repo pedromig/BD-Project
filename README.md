@@ -1215,6 +1215,8 @@ auction. All previous versions must be kept and can be consulted later for refer
 }
 ```
 
+**or**
+
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
 **Content** :
@@ -1255,7 +1257,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 ##### Curl Query Example
 
 ```bash
-curl -X GET http://localhost:8080/auction/2 \
+curl -X PUT http://localhost:8080/auction/2 \
      -H "Content-Type: application/json" \
      -d '{ "title": "hello", "item_description": "world", "auction_description": "again",
      "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjIsImlzX2FkbWl
@@ -1281,34 +1283,91 @@ curl -X GET http://localhost:8080/auction/2 \
 
 ##### Request Parameters
 
-`TODO`
+- token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `201 Created`\
+**Content** : The id of the newly created auction and the success http response code.
 
 ```json
-TODO
+{
+  "code": 201,
+  "id": 34
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : The textual descriptions of the auction are invalid\
+**Code** : `400 Bad Request`\
+**Content** :
 
 ```json
- TODO
+{
+  "code": 400,
+  "error": "Invalid textual arguments"
+}
 ```
 
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**or**
+
+**Condition** : The starting price of the auction is invalid\
+**Code** : `400 Bad Request`\
+**Content** :
+
+```json
+{
+  "code": 400,
+  "error": "Invalid starting price"
+}
+```
+
+**or**
+
+**Condition** : The starting price of the auction is valid but it's negative.\
+**Code** : `400 Bad Request`\
+**Content** :
+
+```json
+{
+  "code": 400,
+  "error": "Invalid starting price"
+}
+```
+
+**or**
+
+**Condition** : Missing token parameter\
+**Code** : `401 Unauthorized`\
+**Content** :
+
+```json
+{
+  "code": 401,
+  "error": "Token is missing!"
+}
+```
+
+**or**
+
+**Condition** : Invalid or malformed token was provided\
+**Code** : `403 Forbidden`\
+**Content** :
+
+```json
+{
+  "code": 403,
+  "error": "Invalid token"
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X POST http://localhost:8080/auction/2 \
+     -H "Content-Type: application/json" \
+     -d '{ "item": "1234123", "min_price": "23", "end_date": "2021-10-12 04:05:04", "title": "Items sale", "item_description": "Itemizer", "auction_description": "Many items", "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTM6MjI6MTUuNjM3NDY2In0_myp-9moEvIK-uuc41qTDeiyt3ed7j5BklkT-mPuxYc"}'
 ```
 
 ---
