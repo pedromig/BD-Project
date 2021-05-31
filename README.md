@@ -27,7 +27,6 @@ database through an SQL interface.
 ## Index
 
 - [BD-Project](#bd-project)
-
   - [About the project](#about-the-project)
   - [Index](#index)
   - [Technologies Used](#technologies-used)
@@ -66,11 +65,8 @@ database through an SQL interface.
     - [Administrator Endpoints](#administrator-endpoints)
       - [User Ban](#user-ban)
       - [Auction Cancellation](#auction-cancellation)
-    - [Application Statistics](#application-statistics)
-      - [Users With Most Auctions](#users-with-most-auctions)
-      - [User Auction Winners](#user-auction-winners)
-      - [Auctions](#auctions)
-  - [Collaborators](#collaborators)
+      - [Application Statistics](#application-statistics)
+  - [Authors](#authors)
 
 ## Technologies Used
 
@@ -543,7 +539,8 @@ curl -X POST http://localhost:8080/user \
 }
 ```
 
-**or**\
+**or**
+
 **Condition** : Missing parameters\
 **Code** : `400 Bad Request`\
 **Content** : An error message with the error code and error details
@@ -552,6 +549,19 @@ curl -X POST http://localhost:8080/user \
 {
   "error": "Invalid Parameters in call",
   "code": 400
+}
+```
+
+**or**
+
+**Condition** : User was already banned\
+**Code** : `403 Not Forbidden`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "This user is banned",
+  "code": 404
 }
 ```
 
@@ -612,7 +622,7 @@ curl -X PUT http://localhost:8080/user \
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -625,7 +635,7 @@ curl -X PUT http://localhost:8080/user \
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -700,7 +710,7 @@ curl -X GET "http://localhost:8080/users" \
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -713,7 +723,7 @@ curl -X GET "http://localhost:8080/users" \
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -726,7 +736,7 @@ curl -X GET "http://localhost:8080/users" \
 
 **Condition** : The query to the database for the user activity failed \
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -761,7 +771,7 @@ curl -X GET "http://localhost:8080/user/activity" \
 
 ##### Success Response
 
-**Content** : `TODO`
+**Content** : All the messages in the user inbox\
 **Code**: `200 OK`
 
 ```json
@@ -791,7 +801,7 @@ curl -X GET "http://localhost:8080/user/activity" \
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -804,7 +814,7 @@ curl -X GET "http://localhost:8080/user/activity" \
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -817,7 +827,7 @@ curl -X GET "http://localhost:8080/user/activity" \
 
 **Condition** : The query to the database for the user inbox failed \
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -851,12 +861,12 @@ to do and is at least higher than the minimum price.\
 ##### Request Parameters
 
 - token
-- amount
+- price
 
 ##### Success Response
 
 **Code** : 201\
-**Content** :
+**Content** : A message indication a successful operation
 
 ```json
 {
@@ -904,7 +914,7 @@ to do and is at least higher than the minimum price.\
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -917,7 +927,7 @@ to do and is at least higher than the minimum price.\
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -930,7 +940,7 @@ to do and is at least higher than the minimum price.\
 
 **Condition** : Something went wrong when accessing the database.\
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -942,7 +952,7 @@ to do and is at least higher than the minimum price.\
 ##### Curl Query Example
 
 ```bash
-curl -X PUT http://localhost:5000/licitation/5 \
+curl -X PUT http://localhost:8080/licitation/5 \
      -H "Content-Type: application/json" \
      -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjMsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTI6MTM6MjguNDczNDk0In0.xCSijevh_ytlmhiv7JL1Czmm6KO77u1kihlqsYAP0a0", "price": '252'}'
 ```
@@ -1001,7 +1011,7 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1014,7 +1024,7 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1027,7 +1037,7 @@ curl -X PUT http://localhost:5000/licitation/5 \
 
 **Condition** : Something went wrong when accessing the database.\
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1100,10 +1110,11 @@ curl -X POST http://localhost:8080/2/mural \
 }
 ```
 
-**or**\
+**or**
+
 **Condition** : Int-valid but non-existant auction or internal server error\
 **Code** : 500\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1112,7 +1123,8 @@ curl -X POST http://localhost:8080/2/mural \
 }
 ```
 
-**or**\
+**or**
+
 **Condition** : Missing parameters\
 **Code** : `400 Bad Request`\
 **Content** : An error message with the error code and error details
@@ -1152,7 +1164,7 @@ curl -X POST http://localhost:8080/2/mural \
 
 **Condition** : Something went wrong when accessing the database.\
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1206,7 +1218,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 
 **Condition** : The user does not have permissions to edit the auction.\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1219,7 +1231,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1232,7 +1244,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1245,7 +1257,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 
 **Condition** : Something went wrong when accessing the database.\
 **Code** : `500 Internal Server Error`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1259,10 +1271,7 @@ auction. All previous versions must be kept and can be consulted later for refer
 ```bash
 curl -X PUT http://localhost:8080/auction/2 \
      -H "Content-Type: application/json" \
-     -d '{ "title": "hello", "item_description": "world", "auction_description": "again",
-     "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwZXJzb25faWQiOjIsImlzX2FkbWl
-     uIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3T
-     s-31VaggJPSDl5YI4sdLl_hDFxc"}'
+     -d '{ "title": "hello", "item_description": "world", "auction_description": "again","token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOjIsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMTU6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFxc"}'
 ```
 
 ---
@@ -1301,7 +1310,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 
 **Condition** : The textual descriptions of the auction are invalid\
 **Code** : `400 Bad Request`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1314,7 +1323,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 
 **Condition** : The starting price of the auction is invalid\
 **Code** : `400 Bad Request`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1327,7 +1336,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 
 **Condition** : The starting price of the auction is valid but it's negative.\
 **Code** : `400 Bad Request`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1340,7 +1349,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 
 **Condition** : Missing token parameter\
 **Code** : `401 Unauthorized`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1353,7 +1362,7 @@ curl -X PUT http://localhost:8080/auction/2 \
 
 **Condition** : Invalid or malformed token was provided\
 **Code** : `403 Forbidden`\
-**Content** :
+**Content** : An error message with the error code and error details
 
 ```json
 {
@@ -1374,85 +1383,202 @@ curl -X POST http://localhost:8080/auction/2 \
 
 #### Auction Listing
 
-**URL** : `/auction`\
+**URL** : `/auctions`\
 **Description**: List all auctions that are present in the application's database.\
 **Method** : `GET`\
-**Authentication required** : `NO`\
+**Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
-`TODO`
+- token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `200 OK`\
+**Content** : The list of existing and running auctions in the database
 
 ```json
-TODO
+[
+  {
+    "code": 200
+  },
+  {
+    "description": "Donec quis orci eget orci vehicula condimentum.",
+    "id": 1
+  },
+  {
+    "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit.",
+    "id": 7
+  },
+  {
+    "description": "In hac habitasse platea dictumst.",
+    "id": 9
+  },
+  {
+    "description": "In hac habitasse platea dictumst.",
+    "id": 10
+  },
+  {
+    "description": "Etiam pretium iaculis justo.",
+    "id": 21
+  },
+  {
+    "description": "Maecenas ut massa quis augue luctus tincidunt.",
+    "id": 26
+  }
+]
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Invalid or malformed token was provided\
+**Code** : `403 Forbidden`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "code": 403,
+  "error": "Invalid token"
+}
 ```
 
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**or**
+
+**Condition** : Missing token parameter\
+**Code** : `401 Unauthorized`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "code": 401,
+  "error": "Token is missing!"
+}
+```
+
+**or**
+
+**Condition** : Something went wrong when accessing the database.\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Error message (dependant on type of internal error)",
+  "code": 500
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X GET "http://localhost:8080/auctions" \
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
+     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
+     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
 ```
 
 ---
 
 #### Auction Searching
 
-**URL** : `/auction/<filter>`\
+**URL** : `/auctions/<filter>`\
 **Description**: List ongoing auctions by code EAN / ISBN or by the auction's description. This listing presents the identifier and description of each auction.
 that meets the search criteria.\
 **Method** : `GET`\
-**Authentication required** : `NO`\
+**Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
-`TODO`
+- token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `200 OK`\
+**Content** : The list of auctions that meet the search filter criteria
 
 ```json
-TODO
+[
+  {
+    "code": 200
+  },
+  {
+    "description": "In hac habitasse platea dictumst.",
+    "id": 9
+  },
+  {
+    "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit.",
+    "id": 7
+  },
+  {
+    "description": "In hac habitasse platea dictumst.",
+    "id": 10
+  },
+  {
+    "description": "Maecenas ut massa quis augue luctus tincidunt.",
+    "id": 26
+  },
+  {
+    "description": "Etiam pretium iaculis justo.",
+    "id": 21
+  },
+  {
+    "description": "Donec quis orci eget orci vehicula condimentum.",
+    "id": 1
+  }
+]
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Missing token parameter\
+**Code** : `401 Unauthorized`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "code": 401,
+  "error": "Token is missing!"
+}
 ```
 
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**or**
+
+**Condition** : Invalid or malformed token was provided\
+**Code** : `403 Forbidden`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "code": 403,
+  "error": "Invalid token"
+}
+```
+
+**or**
+
+**Condition** : Something went wrong when accessing the database.\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Error message (dependant on type of internal error)",
+  "code": 500
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X GET "http://localhost:8080/auctions/a" \
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
+     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
+     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
+
 ```
 
 ---
@@ -1462,39 +1588,82 @@ TODO
 **URL** : `/auction/<auctionID>`\
 **Description**: Obtain all details regarding the item description, the end of the auction, the messages exchanged and the history of bids made.\
 **Method** : `GET`\
-**Authentication required** : `NO`\
+**Authentication required** : `YES`\
 **Permissions required** : `None`
 
 ##### Request Parameters
 
-`TODO`
+- token
 
 ##### Success Response
 
-**Code** : `TODO`\
-**Content** : `TODO`
+**Code** : `200 OK`\
+**Content** : All the details of the running auction.
 
 ```json
-TODO
+{
+  "code": 200,
+  "auction_description": "Donec quis orci eget orci vehicula condimentum",
+  "canceled": false,
+  "creator": "dalliband0",
+  "end_date": "Sat, 12 Jun 2021 04:05:06 GMT",
+  "id": 1,
+  "item": 1234,
+  "item_description": "Mauris enim leo, rhoncus sed, vestibulum sit amet",
+  "opening_price": 32.3,
+  "title": "libero",
+  "messages": [],
+  "licitation": []
+}
 ```
 
 ##### Error Responses
 
-**Condition** : `TODO`\
-**Code** : `TODO`\
-**Content** : `TODO`
+**Condition** : Missing token parameter\
+**Code** : `401 Unauthorized`\
+**Content** : An error message with the error code and error details
 
 ```json
- TODO
+{
+  "code": 401,
+  "error": "Token is missing!"
+}
 ```
 
-**or**\
-`TODO: If there are more responses add them bellow separation them bellow`
+**or**
+
+**Condition** : Invalid or malformed token was provided\
+**Code** : `403 Forbidden`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "code": 403,
+  "error": "Invalid token"
+}
+```
+
+**or**
+
+**Condition** : Something went wrong when accessing the database.\
+**Code** : `500 Internal Server Error`\
+**Content** : An error message with the error code and error details
+
+```json
+{
+  "error": "Error message (dependant on type of internal error)",
+  "code": 500
+}
+```
 
 ##### Curl Query Example
 
 ```bash
-TODO
+curl -X GET "http://localhost:8080/auction/123" \
+     -H "Content-Type: application/json" \
+     -d '{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9eyJwZXJzb25faWQiOj
+     IsImlzX2FkbWluIjpmYWxzZSwiZXhwaXJhdGlvbiI6IjIwMjEtMDUtMzEgMT
+     U6MTc6NTUuNDcyMjgyIn0.qz03llaqtm4gzC3Ts-31VaggJPSDl5YI4sdLl_hDFx2}'
 ```
 
 ---
@@ -1609,7 +1778,7 @@ curl -X POST http://localhost:8080/admin/cancel \
 
 #### Application Statistics
 
-**URL** : `/statistics/users`\
+**URL** : `/admin/stats`\
 **Description**:
 
 - Top 10 users with the most auctions created.
@@ -1681,7 +1850,8 @@ curl -X GET http://localhost:5000/admin/stats \
 
 ---
 
-## Collaborators
+## Authors
 
-- [Miguel Rabuge](https://github.com/MikeLrUC)
 - [Duarte Dias](https://github.com/TLDart)
+- [Miguel Rabuge](https://github.com/MikeLrUC)
+- [Pedro Rodrigues](https://github.com/pedromig)

@@ -65,10 +65,32 @@ def auth_user(func):
         content = request.get_json()
         if content is None or "token" not in content or not content["token"]:
             return jsonify({'error': 'Token is missing!', 'code': UNAUTHORIZED_CODE})
+
+        check_ban_stmt = """
+            SELECT *
+            FROM person
+            WHERE banned = true AND id = %s; 
+        """
+
         try:
             token = content["token"]
             logger.info(f'Token Content, {token}')
-            jwt.decode(token, app.config['SECRET_KEY'])
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+
+            try:
+                with create_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute(check_ban_stmt, [data["person_id"]])
+                        rows = cursor.fetchall()
+                        logger.info(rows)
+                        if rows != []:
+                            return jsonify({"code": FORBIDDEN_CODE, "error": "This user is banned"})
+
+                conn.close()
+            except (Exception, pg.DatabaseError) as error:
+                logger.error(error)
+                return jsonify({"code": INTERNAL_SERVER_CODE, "error": error})
+
         except Exception as e:
             logger.debug(e)
             return jsonify({'error': 'Invalid token', 'code': FORBIDDEN_CODE})
@@ -273,7 +295,7 @@ def user_licitation(auctionID):
             with conn.cursor() as cursor:
                 cursor.execute(validate_auction_stmt, values_validate_auction)
                 rows = cursor.fetchall()
-                logger.info(rows);
+                logger.info(rows)
                 if(rows == []):
                     return jsonify({"error": "Either not existant or terminated/cancelled auction", "code": BAD_REQUEST_CODE})
 
@@ -687,7 +709,7 @@ def auction_details(auctionID: str):
     logger.info("Making the database query...")
     try:
         with create_connection() as conn:
-            payload = {}
+            payload = {"code": OK_CODE}
             with conn.cursor() as cursor:
 
                 # Auction properties query
@@ -1065,8 +1087,8 @@ def ban_user():
 
     update_max_stmt = """
                     UPDATE licitation
-                    SET price = %s
-                    WHERE price = %s;
+                    SET price = '%s'
+                    WHERE price = '%s';
                     """
 
     try:

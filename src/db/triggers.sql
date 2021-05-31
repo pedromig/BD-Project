@@ -28,6 +28,7 @@ $$
 DECLARE
     f BIGINT;
     d BIGINT;
+    k BIGINT;
 
 BEGIN
     SELECT person_id INTO k from auction WHERE id = NEW.auction_id;
