@@ -27,6 +27,9 @@ def check_params(paramlist, args):
     if "file" in paramlist and args.file == None:
         print("No filename specified")
         exit(0)
+    if "amount" in paramlist and args.amount == None:
+        print("No amount specified")
+        exit(0)
     return True
 
 
@@ -59,7 +62,7 @@ def create_user(username, password, email):
    
 
 def make_bid(auction, amount):
-    payload = '{"token": "%s", "amount" : "%s"}' % (token,amount)
+    payload = '{"token": "%s", "price" : "%s"}' % (token,amount)
     return make_request(url + f'/licitation/{auction}', 'POST', payload)
 
 def read_inbox():
@@ -85,6 +88,7 @@ def post_mural(auction, message):
 
 def list_mural(auction):
     payload = '{"token": "%s"}' % token
+    print(url + f'/auction/{auction}/mural')
     return make_request(url + f'/auction/{auction}/mural', 'PUT', payload)
 
 #Admin Operations
@@ -112,15 +116,16 @@ def main():
     parser.add_argument('-t','--token', help='Defines the token',action='store')
     parser.add_argument('-c','--createuser', help='Creates a new user in the db',action='store_true')
     parser.add_argument('-u','--username', help='Defines the username',action='store')
-    parser.add_argument('-p','--password', help='Defines the password',action='store')
+    parser.add_argument('-pw','--password', help='Defines the password',action='store')
     parser.add_argument('-e','--email', help='Defines the email',action='store')
     parser.add_argument('-m','--message', help='Sets Message', action='store')
     parser.add_argument('-f','--file', help='Set the filepath for saving the token',action='store')
-    parser.add_argument('-p','--port', help='Sets the port where actions are gonna be called', action='store_true')
+    parser.add_argument('-p','--port', help='Sets the port where actions are gonna be called', action='store')
     parser.add_argument('-a','--auction', help='Sets the auction number', action='store')
     parser.add_argument('-id','--id', help='Sets the id (user or action) to be banned', action='store')
-    parser.add_argument('-li','--licitation', help='Sets the price for a licitation', action='store')
-    parser.add_argument('-lm','--listmural', help='Shows the content of the mural for a certain election', action='store_true')
+    parser.add_argument('-amt','--amount', help='Sets the amount for a bid', action='store')
+    parser.add_argument('-li','--licitation', help='Make a licitation', action='store_true')
+    parser.add_argument('-lm','--listmural', help='Shows the content of the mural for a certain auction', action='store_true')
     parser.add_argument('-pm','--postmural', help='Post the message to the mural', action='store_true')
     parser.add_argument('-la','--listauction', help='List auctions action', action='store_true')
     parser.add_argument('-bu','--banuser', help='List auctions action', action='store_true')
@@ -158,6 +163,7 @@ def main():
     if args.listmural:
         check_params(['auction'],args)
         r = list_mural(args.auction)
+        print(r)
         print(json.dumps(r.json(), indent=2))
 
     if args.postmural:
@@ -166,8 +172,9 @@ def main():
         print(json.dumps(r.json(), indent=2))
 
     if args.licitation: 
-        check_params(['auction', 'price'])
-        r = make_bid(args.licitation)
+        check_params(['auction', 'amount'],args)
+        r = make_bid(args.auction, args.amount)
+        print(r)
         print(json.dumps(r.json(), indent=2))
 
     if args.listauction: 
@@ -175,12 +182,12 @@ def main():
         print(json.dumps(r.json(), indent=2))
 
     if args.cancelauction: 
-        check_params(['id'])
+        check_params(['id'],args)
         r = cancel_auction(args.id)
         print(json.dumps(r.json(), indent=2))
     
     if args.banuser: 
-        check_params(['id'])
+        check_params(['id'],args)
         r = ban_user(args.id)
         print(json.dumps(r.json(), indent=2))
     
