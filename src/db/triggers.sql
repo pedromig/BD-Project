@@ -6,6 +6,7 @@ $$
 DECLARE
     f BIGINT;
     d BIGINT;
+    k BIGINT;
 
 BEGIN
 	FOR f IN SELECT DISTINCT person_id FROM licitation
@@ -29,8 +30,9 @@ DECLARE
     d BIGINT;
 
 BEGIN
+    SELECT person_id INTO k from auction WHERE id = NEW.auction_id;
 	FOR f IN SELECT DISTINCT person_id FROM message
-            WHERE message.auction_id = NEW.auction_id AND message.person_id != NEW.person_id
+            WHERE message.auction_id = NEW.auction_id AND message.person_id != NEW.person_id AND NEW.person_id != k
     LOOP
         INSERT INTO notification (content) VALUES ('New Notification') RETURNING notification.id INTO d;
         INSERT INTO inbox_messages (person_id, notification_id) VALUES (f, d);
