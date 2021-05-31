@@ -1,3 +1,4 @@
+import enum
 from os import error
 from flask import Flask, json, jsonify, request
 from datetime import datetime, timedelta
@@ -20,8 +21,8 @@ auth = None
 ADMIN_ID = 1
 
 '''     Codes      '''
+OK_CODE = 200
 SUCCESS_CODE = 201
-
 BAD_REQUEST_CODE = 400
 UNAUTHORIZED_CODE = 401
 FORBIDDEN_CODE = 403
@@ -57,8 +58,6 @@ class APILogFormatter(logging.Formatter):
 
 
 # Token Interceptor
-
-
 def auth_user(func):
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -135,13 +134,26 @@ def login():
     except (Exception, pg.DatabaseError) as error:
         logger.error(error)
         return jsonify({"code": NOT_FOUND_CODE, "error": "User not Found"})
-    return {'token': token.decode('utf-8')}
+    return {"code": OK_CODE, 'token': token.decode('utf-8')}
+
+
+def user_list_response_builder(rows):
+    users = [{"code": OK_CODE}]
+    for id, username, email, banned in rows:
+        users.append({
+            "id": id,
+            "username": username,
+            "email": email,
+            "banned": banned
+        })
+    return users
 
 # User Listing Endpoint
 @app.route("/users", methods=['GET'])
+@auth_user
 def print_users():
     get_people_stmt = """
-                    SELECT id, username, password, email, banned
+                    SELECT id, username, email, banned
                     FROM person;
                     """
     try:
@@ -149,11 +161,12 @@ def print_users():
             with conn.cursor() as cursor:
                 cursor.execute(get_people_stmt)
                 rows = cursor.fetchall()
+                users = user_list_response_builder(rows)
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error(error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": "Could not fetch users data"})
-    return jsonify({"users": rows})
+    return jsonify(users)
 
 # Sign up Endpoint
 @app.route("/user", methods=['POST'])
@@ -205,9 +218,9 @@ def create_user():
                     "Insert user successfully into the database Username: %s , Password: %s, email: %s, is_Admin : false", *values)
         conn.close()
     except (Exception, pg.DatabaseError) as error:
-        logger.error("There was an error : %s", error)
+        logger.error(error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    return jsonify({"id": str(rows[0][0])})
+    return jsonify({"code": SUCCESS_CODE, "id": str(rows[0][0])})
 
 
 @app.route("/licitation/<auctionID>", methods=['PUT'])
@@ -271,42 +284,69 @@ def user_licitation(auctionID):
                 cursor.execute(insert_bid_stmt, values_insert_bid)
         conn.close()
     except (Exception, pg.DatabaseError) as error:
-        logger.error("There was an error : %s", error)
+        logger.error(error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
     return jsonify({"response": "Successful", "code": SUCCESS_CODE})
 
 
-@app.route("/user/inbox", methods=['PUT'])
+def inbox_messages_list_response_builder(rows):
+    inbox = [{"code": OK_CODE}]
+    for date, content, was_read in rows:
+        inbox.append({
+            "date": date,
+            "message": content,
+            "was_read": was_read
+        })
+    return inbox
+
+
+@app.route("/user/inbox", methods=["GET"])
 @auth_user
 def list_user_inbox():
     content = request.get_json()
     token = content["token"]
     decoded = jwt.decode(token, app.config['SECRET_KEY'])
     author = decoded['person_id']
+
+    # SQL queries
     list_user_inbox_stmt = """
-               SELECT *
-               FROM inbox_messages, notification
-               WHERE inbox_messages.notification_id = notification.id and inbox_messages.person_id = %s;
-                """
-    values = [author]  # BUG using to list to hotfix this
+        SELECT time_date,
+            content,
+            was_read
+        FROM inbox_messages,
+            notification
+        WHERE inbox_messages.notification_id = notification.id
+            AND inbox_messages.person_id = %s;
+    """
+
+    mark_read_stmt = """
+        UPDATE inbox_messages
+        SET was_read = true
+        WHERE person_id = %s;
+    """
+
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(list_user_inbox_stmt, values)
+                cursor.execute(list_user_inbox_stmt, [author])
                 rows = cursor.fetchall()
+                cursor.execute(mark_read_stmt, [author])
+
                 logger.info(
-                    "Successfully fetched %d rows from user %s Notification Board ", len(rows), author)
+                    "Successfully fetched %d rows from user %s inbox", len(rows), author)
+                inbox = inbox_messages_list_response_builder(rows)
+
         conn.close()
     except (Exception, pg.DatabaseError) as error:
-        logger.error("There was an error : %s", error)
+        logger.error(error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    return jsonify(rows)
+    return jsonify(inbox)
 
 # Fetch auction description for each given ID
 
 
 def auction_list_response_builder(rows):
-    auctions = []
+    auctions = [{"code": OK_CODE}]
     for id, description in rows:
         # Append Auction to the response
         logger.info(
@@ -664,6 +704,17 @@ def auction_details(auctionID: str):
     return jsonify(payload)
 
 
+def message_list_response_builder(rows):
+    messages = [{"code": OK_CODE}]
+    for username, content, time_date in rows:
+        messages.append({
+            "username": username,
+            "message": content,
+            "time_date": time_date
+        })
+    return messages
+
+
 def write_msg_core(auctionID, author, message):
     # We could verify is auction exists in the database before running this command
     write_msg_stmt = """
@@ -693,40 +744,123 @@ def write_msg(auctionID):
     if not {"message"}.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
 
+    if not auctionID.isdigit():
+        return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
+
     token = content["token"]
     decoded = jwt.decode(token, app.config['SECRET_KEY'])
     author = decoded['person_id']
     message = content['message']
 
-    try:
-        int(auctionID)
-    except Exception as error:
-        return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
-
     return write_msg_core(auctionID, author, message)
 
 # List all messages in message board
-@app.route("/auction/<auctionID>/mural", methods=['PUT'])
+@app.route("/auction/<auctionID>/mural", methods=["GET"])
 @auth_user
 def list_msg(auctionID):
+
+    if not auctionID.isdigit():
+        return jsonify({"error": "Invalid auctionID", "code": NOT_FOUND_CODE})
+
+    # SQL queries
     list_msg_stmt = """
-               SELECT * 
-               FROM message 
-               WHERE auction_id = %s;
-                """
-    values = (auctionID)
+        SELECT username,
+            content,
+            time_date
+        FROM message
+            JOIN (
+                SELECT id,
+                    username
+                FROM person
+            ) AS info ON info.id = person_id
+        WHERE auction_id = %s;
+    """
+
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(list_msg_stmt, values)
+                cursor.execute(list_msg_stmt, [auctionID])
                 rows = cursor.fetchall()
-                logger.info(
-                    "Successfully fetched %d rows from Message Board from auction %s", len(rows), auctionID)
+
+                logger.info("Successfully fetched %d rows from Message Board from auction %s", len(
+                    rows), auctionID)
+                messages = message_list_response_builder(rows)
+
         conn.close()
     except (Exception, pg.DatabaseError) as error:
         logger.error("There was an error : %s", error)
         return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
-    return jsonify(rows)
+    return jsonify(messages)
+
+
+@app.route("/auction/<auctionID>", methods=["PUT"])
+def edit_auction(auctionID: str):
+
+    content = request.get_json()
+    token = jwt.decode(content["token"], app.config['SECRET_KEY'])
+
+    logger.info(f'Request Content: {content}')
+
+    # Editable information
+    edit_args = ["title", "item_description",
+                 "auction_description"]
+
+    # SQL queries
+    auction_information_by_id_stmt = """
+        SELECT title,
+            item_description,
+            auction_description,
+            time_date,
+            person_id
+        FROM auction
+            JOIN (
+                SELECT *
+                FROM information
+                    JOIN (
+                        SELECT MAX(reference) as ref,
+                            auction_id as aid
+                        FROM information
+                        WHERE auction_id = %s
+                        GROUP BY auction_id
+                    ) AS ref_id ON reference = ref_id.ref
+            ) AS info ON id = info.auction_id;
+    """
+
+    auction_add_info_stmt = """
+            INSERT INTO information
+            (title, item_description, auction_description, auction_id)
+            VALUES
+            (%s, %s, %s, %s);
+            """
+
+    try:
+        with create_connection() as conn:
+            with conn.cursor() as cursor:
+                # Getting most recent auction information details
+                cursor.execute(auction_information_by_id_stmt, auctionID)
+                rows = cursor.fetchone()
+
+                if rows[-1] != token["person_id"]:
+                    return jsonify({"error": "The user is not the auction's owner", "code": UNAUTHORIZED_CODE})
+
+                edit = dict(zip(edit_args, rows[:-1]))
+                logger.info(f"Existing Information Values: {edit}")
+
+                # Update information details
+                for arg in edit_args:
+                    if arg in content:
+                        edit[arg] = content[arg]
+
+                cursor.execute(auction_add_info_stmt, list(
+                    edit.values()) + [auctionID])
+                logger.info(f"Auction Information Updated with values: {edit}")
+
+        conn.close()
+    except (Exception, pg.DatabaseError) as error:
+        logger.error("There was an error : %s", error)
+        return jsonify({"code": INTERNAL_SERVER_CODE, "error": str(error)})
+
+    return jsonify({"response": "Successfull", "code": SUCCESS_CODE})
 
 
 ######################################################################################
