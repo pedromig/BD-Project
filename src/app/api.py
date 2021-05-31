@@ -422,9 +422,26 @@ def create_auction():
     content = request.get_json()
     token = jwt.decode(content["token"], app.config['SECRET_KEY'])
 
-    logger.info(f'Request Content: {content}')
     if not args.issubset(content):
         return jsonify({'error': 'Invalid Parameters in call', 'code': BAD_REQUEST_CODE})
+
+    # Check if arguments are valid
+
+    if content["title"] is None or content["item_description"] is None or content["auction_description"] is None:
+        return jsonify({'error': 'Invalid textual arguments', 'code': BAD_REQUEST_CODE})
+
+    if content["item"] is None or not content["item"].isdigit():
+        return jsonify({'error': 'Invalid item EAN/ISBN', 'code': BAD_REQUEST_CODE})
+
+    if content["min_price"] is None or not content["min_price"].isdigit():
+        return jsonify({'error': 'Invalid starting price', 'code': BAD_REQUEST_CODE})
+
+    try:
+        float(content["min_price"])
+    except ValueError:
+        return jsonify({'error': 'Starting price may not be negative', 'code': BAD_REQUEST_CODE})
+
+    logger.info(f'Request Content: {content}')
 
     # SQL queries
     auction_create_stmt = """
@@ -472,7 +489,7 @@ def create_auction():
         logger.error(error)
         return jsonify({"error": str(error), "code": INTERNAL_SERVER_CODE})
 
-    return jsonify({"id": id})
+    return jsonify({"id": id, "code": SUCCESS_CODE})
 
 
 # Auction Listing Endpoint
