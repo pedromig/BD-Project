@@ -242,6 +242,12 @@ def user_licitation(auctionID):
     except Exception as error:
         return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
 
+    validate_auction_stmt = """
+                        SELECT 1
+                        FROM auction 
+                        WHERE id = %s AND cancelled = %s AND CURRENT_TIMESTAMP < end_date;
+    """
+
     list_max_bid_auction_stmt = """
                         SELECT MAX(price)
                         FROM licitation
@@ -257,6 +263,7 @@ def user_licitation(auctionID):
                INSERT INTO licitation (price, auction_id, person_id) VALUES (%s, %s ,%s)
                 """
 
+    values_validate_auction = (auctionID, "false")
     values_max_bid = (auctionID, "true")
     values_min_price = (auctionID)
     values_insert_bid = (price, auctionID, author)
@@ -264,12 +271,18 @@ def user_licitation(auctionID):
     try:
         with create_connection() as conn:
             with conn.cursor() as cursor:
-                # stmt 1
+                cursor.execute(validate_auction_stmt, values_validate_auction)
+                rows = cursor.fetchall()
+                logger.info(rows);
+                if(rows == []):
+                    return jsonify({"error": "Either not existant or terminated/cancelled auction", "code": BAD_REQUEST_CODE})
+
+                # stmt 2
                 cursor.execute(list_max_bid_auction_stmt, values_max_bid)
                 rows = cursor.fetchall()
                 max_bid = 0 if rows[0][0] == None else float(rows[0][0])
 
-                # stmt 2
+                # stmt 3
                 cursor.execute(list_min_price_stmt, values_min_price)
                 rows = cursor.fetchall()
                 logger.info(rows)
@@ -280,7 +293,7 @@ def user_licitation(auctionID):
                 if float(price) <= max(max_bid, min_amt):
                     return jsonify({"error": "Invalid Amount (Lower Than Allowed)", "code": BAD_REQUEST_CODE})
 
-                # stmt 3
+                # stmt 4
                 cursor.execute(insert_bid_stmt, values_insert_bid)
         conn.close()
     except (Exception, pg.DatabaseError) as error:
