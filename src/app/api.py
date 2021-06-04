@@ -258,9 +258,12 @@ def user_licitation(auctionID):
     author = decoded['person_id']
     price = content['price']
 
+    logger.info(f'Request Content: {content}')
+
     try:
         int(auctionID)
         float(price)
+        logger.debug(f"AuctionID: {auctionID}, bid: {price}")
     except Exception as error:
         return jsonify({'code': BAD_REQUEST_CODE, "error": 'Invalid Parameters in call'})
 
@@ -285,10 +288,10 @@ def user_licitation(auctionID):
                INSERT INTO licitation (price, auction_id, person_id) VALUES (%s, %s ,%s)
                 """
 
-    values_validate_auction = (auctionID, "false")
-    values_max_bid = (auctionID, "true")
-    values_min_price = (auctionID)
-    values_insert_bid = (price, auctionID, author)
+    values_validate_auction = [auctionID, "false"]
+    values_max_bid = [auctionID, "true"]
+    values_min_price = [auctionID]
+    values_insert_bid = [price, auctionID, author]
 
     try:
         with create_connection() as conn:
@@ -408,7 +411,7 @@ def user_activity():
                 FROM auction
                 WHERE person_id = %s
                 UNION
-                SELECT id
+                SELECT auction_id
                 FROM licitation
                 WHERE person_id = %s
             ) AS activity
@@ -584,11 +587,11 @@ def search_auctions(filter: str):
     # SQL query
     auction_search_stmt = """
                 SELECT id,
-                    auction_description
+                    item_description
                 FROM auction
                     JOIN (
                         SELECT auction_id,
-                            auction_description
+                            item_description
                         FROM information
                             JOIN (
                                 SELECT MAX(reference) as ref,
@@ -598,7 +601,7 @@ def search_auctions(filter: str):
                             ) AS ref_id ON reference = ref_id.ref
                     ) AS info ON id = info.auction_id
                 WHERE end_date > TIMESTAMP %s
-                    AND {} auction_description LIKE %s;
+                    AND {} item_description LIKE %s;
                 """.format(id_filter_stmt)
 
     logger.info("Making the database query...")
@@ -889,7 +892,7 @@ def edit_auction(auctionID: str):
         with create_connection() as conn:
             with conn.cursor() as cursor:
                 # Getting most recent auction information details
-                cursor.execute(auction_information_by_id_stmt, auctionID)
+                cursor.execute(auction_information_by_id_stmt, [auctionID])
                 rows = cursor.fetchone()
 
                 if rows[-1] != token["person_id"]:
