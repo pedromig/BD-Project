@@ -45,10 +45,10 @@ database through an SQL interface.
       - [Web Server (REST API) Container](#web-server--rest-api--container)
     - [Useful Docker Commands](#useful-docker-commands)
   - [Dragon Server](#dragon-server)
-  - [Project Features](#project-features)
+  - [Project features](#project-features)
     - [Database Design](#database-design)
-    - [REST API Specification](#rest-api-specification)
-    - [User Endpoints](#user-endpoints)
+    - [REST API specification](#rest-api-specification)
+    - [User endpoints](#user-endpoints)
       - [User Registration](#user-registration)
       - [User Authentication](#user-authentication)
       - [User Listing](#user-listing)
@@ -440,25 +440,25 @@ The project will be available in our server. To access the REST API access the f
 http://dragonserver.ddns.net:8080/
 ```
 
-## Project Features
+## Project features
 
 ### Database Design
 
 - Conceptual Diagram (Onda)
 
-![conceptual-erd](./src/app/templates/ERD_conceptual.png)
+![conceptual-erd](./ERD_conceptual.png)
 
 - Physical Diagram (Onda)
 
-![physical-erd](./src/app/templates/ERD_physical.png)
+![physical-erd](./ERD_physical.png)
 
-### REST API Specification
-
----
+### REST API specification
 
 ---
 
-### User Endpoints
+---
+
+### User endpoints
 
 ---
 

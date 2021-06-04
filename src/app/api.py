@@ -1,18 +1,14 @@
-import enum
 from os import error
-from flask import Flask, json, jsonify, request
+from flask import Flask, jsonify, request
 from datetime import datetime, timedelta
 from functools import wraps
-from flask.globals import current_app
-from flask.json.tag import PassDict
 
 import psycopg2 as pg
+import markdown as md
 import logging
-import sys
 import time
 import argparse
 import jwt
-from werkzeug.wrappers import ResponseStream
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'it\xb5u\xc3\xaf\xc1Q\xb9\n\x92W\tB\xe4\xfe__\x87\x8c}\xe9\x1e\xb8\x0f'
@@ -114,8 +110,12 @@ def create_connection():
 
 # Root Endpoint
 @app.route('/')
-def hello():
-    return "Welcome to the BD-Project!!"
+def index():
+    readme_file = open("./templates/index.md", "r")
+    md_template_string = md.markdown(
+        readme_file.read(), extensions=["fenced_code"]
+    )
+    return md_template_string
 
 
 ######################################################################################
